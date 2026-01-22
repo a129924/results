@@ -35,7 +35,7 @@ Result 類型帶來的好處：
 - [ ] Ok[T] 和 Err[E] 作為具體實現類
 - [ ] BaseError（可選基類）幫助開發者快速定義業務異常
 - [ ] 異常類層級（ResultError, UnwrapError）用於框架內部
-- [ ] 支援錯誤鏈式記錄（and_then 中追蹤所有失敗）
+- [ ] 支援型別層錯誤累積（and_then 自動使用 Union 組合錯誤類型）
 - [ ] 強制 private 屬性存取（_value, _error 只能通過 public 方法取得）
 - [ ] 完整的單元測試和集成測試（覆蓋率 ≥ 85%）
 - [ ] 清晰的 TypeVar 定義（T, E）和文檔
@@ -108,7 +108,13 @@ CHANGELOG.md                          # 版本記錄（預留）
 - 替代方案：直接暴露 .value 和 .error 屬性（違反封裝原則）
 - 結論：_value, _error 作為 private，僅通過 @property 和 public 方法存取
 
-**決策 5：三層 API 暴露**
+**決策 5：and_then 使用 Union 型別自動累積錯誤**
+- 原因：通過型別系統自動追蹤 and_then 鏈中所有可能的錯誤，IDE 能完全提示
+- 簽名：`def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, Union[F, E]]`
+- 好處：無運行時開銷，完全由 mypy 推導，開發者體驗最佳
+- 結論：純型別層面的錯誤累積，無需手動步驟標籤或錯誤鏈記錄
+
+**決策 6：三層 API 暴露**
 - 層級 1：核心契約 (Result, T, E, ResultError)
 - 層級 2：實現類 (Ok, Err)
 - 層級 3：進階/可選 (BaseError, UnwrapError)
@@ -118,7 +124,7 @@ CHANGELOG.md                          # 版本記錄（預留）
 - **框架/庫：** Python 3.10+，無外部依賴（內建 `typing`, `dataclasses`, `abc`）
 - **型別檢查：** mypy 完整相容，PEP 561 支援
 - **非同步策略：** 先實現同步版本，非同步版本在 impl/async_/ 預留
-- **錯誤鏈記錄：** Err 內部維護 _context（追蹤步驟名稱、時間戳等）
+- **型別層錯誤累積：** and_then 使用 Union[F, E] 自動推導，無需運行時追蹤
 - **測試框架：** pytest，測試覆蓋率目標 ≥ 85%
 - **代碼標準：** 遵循 package-rules，Protocol SRP，ABC CSRP，使用 @typing_extensions.override
 
@@ -158,7 +164,7 @@ CHANGELOG.md                          # 版本記錄（預留）
   - [ ] 所有 Result ABC 方法實現（@typing_extensions.override）
   - [ ] __repr__, __eq__, __hash__
 - [ ] `impl/sync/err.py` — Err[E] 實現
-  - [ ] _error private 屬性 + _context 錯誤鏈
+  - [ ] _error private 屬性
   - [ ] 所有 Result ABC 方法實現（@typing_extensions.override）
   - [ ] __repr__, __eq__, __hash__
 - [ ] `impl/sync/result.py` — SyncResult 工廠函數或實現註冊
@@ -206,7 +212,7 @@ CHANGELOG.md                          # 版本記錄（預留）
 - [ ] `tests/integration/test_and_then_chain.py`
   - [ ] 多級 and_then 成功流程
   - [ ] 多級 and_then 失敗流程（停止在第一個失敗）
-  - [ ] 錯誤鏈正確記錄所有步驟
+  - [ ] 型別推導：Result[T, E1 | E2 | E3] 正確累積
 
 - [ ] `tests/integration/test_private_access.py`
   - [ ] 確保 `result._value` 拋 AttributeError（private 檢查）
@@ -252,9 +258,7 @@ CHANGELOG.md                          # 版本記錄（預留）
 - [ ] and_then() 支援 Result 的再次返回
 - [ ] unwrap() 成功時返回值，失敗時拋 UnwrapError
 - [ ] ok() 和 err() 返回 Optional
-- [ ] 錯誤鏈正確記錄 and_then 中的所有步驟
-- [ ] BaseError 可被開發者繼承
-- [ ] TypeVar T, E 清晰且有文檔
+- [ ] and_then 型別推導自動累積 Union 錯誤
 
 ### 4.2 質量驗收
 
@@ -284,13 +288,13 @@ CHANGELOG.md                          # 版本記錄（預留）
 | 階段 | 任務 | 預計天數 | 備註 |
 |------|------|--------|------|
 | 1 | 目錄結構 + 規劃文檔 | 0.5 | 當天完成 |
-| 2 | core/types.py + core/base.py | 1 | 契約層定義 |
+| 2 | core/types.py + core/base.py | 1 | 契約層定義（Union 型別） |
 | 3 | exceptions.py | 0.5 | 異常類 |
 | 4 | impl/sync/ok.py | 1 | Ok 實現 |
-| 5 | impl/sync/err.py | 1.5 | Err + 錯誤鏈 |
-| 6 | 單元測試（階段 4-5） | 2 | 覆蓋 Ok/Err/錯誤鏈 |
+| 5 | impl/sync/err.py | 1 | Err 實現（無錯誤鏈邏輯） |
+| 6 | 單元測試（階段 4-5） | 2 | 覆蓋 Ok/Err，mypy 型別推導 |
 | 7 | __init__.py + 文檔 | 1 | API 暴露 + README |
-| **合計** | | 7 天 | |
+| **合計** | | 6.5 天 | |
 
 ### Git 工作流
 
@@ -330,11 +334,11 @@ v0.1.0 - Initial Result Type System
 - 緩解措施：逐步測試，必要時使用 type: ignore
 - 監控指標：mypy --strict 無誤
 
-**風險 2：錯誤鏈的效能**
+**風險 2：型別推導複雜度**
 - 風險等級：Low
-- 描述：深層 and_then 鏈可能導致效能下降
-- 緩解措施：基準測試，必要時優化資料結構
-- 監控指標：10 層 and_then < 100µs
+- 描述：深層 and_then 鏈的 Union 型別可能變得複雜
+- 緩解措施：顯式型別註解，必要時使用 type: ignore
+- 監控指標：mypy --strict 無誤，編譯時間 < 5s
 
 **風險 3：開發者使用 _value / _error 繞過 private**
 - 風險等級：Low
@@ -383,51 +387,93 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 
 class Result(ABC, Generic[T, E]):
-    """成功 (T) 或失敗 (E) 的簽章契約"""
+    """成功 (T) 或失敗 (E) 的簽章契約。
+    
+    支援型別層錯誤累積，and_then 會自動推導 Union 錯誤類型。
+    """
     
     @abstractmethod
-    def map(self, op: Callable[[T], "U"]) -> "Result[U, E]": ...
+    def map(self, op: Callable[[T], U]) -> Result[U, E]:
+        """Transform success value, preserving error type."""
+        ...
     
     @abstractmethod
-    def map_err(self, op: Callable[[E], "F"]) -> "Result[T, F]": ...
+    def map_err(self, op: Callable[[E], F]) -> Result[T, F]:
+        """Transform error type, preserving success value."""
+        ...
     
     @abstractmethod
-    def and_then(self, op: Callable[[T], "Result[U, E]"]) -> "Result[U, E]": ...
+    def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, Union[F, E]]:
+        """Chain operations, automatically accumulating error types via Union.
+        
+        Example:
+            result: Result[User, GetUserError] = get_user()
+            # After first and_then:
+            result = result.and_then(validate_user)  
+            # Type: Result[ValidatedUser, GetUserError | ValidateError]
+            # After second and_then:
+            result = result.and_then(send_email)     
+            # Type: Result[ConfirmationData, GetUserError | ValidateError | SendEmailError]
+        """
+        ...
     
     @abstractmethod
-    def unwrap(self) -> T: ...
+    def unwrap(self) -> T:
+        """Extract value or raise UnwrapError."""
+        ...
     
     @abstractmethod
-    def ok(self) -> Optional[T]: ...
+    def ok(self) -> Optional[T]:
+        """Return value if Ok, None if Err."""
+        ...
     
     @abstractmethod
-    def err(self) -> Optional[E]: ...
+    def err(self) -> Optional[E]:
+        """Return error if Err, None if Ok."""
+        ...
     
     @abstractmethod
-    def is_ok(self) -> bool: ...
+    def is_ok(self) -> bool:
+        """Check if this is Ok variant."""
+        ...
     
     @abstractmethod
-    def is_err(self) -> bool: ...
+    def is_err(self) -> bool:
+        """Check if this is Err variant."""
+        ...
 
 # 層級 2：實現
 @dataclass(frozen=True)
 class Ok(Result[T, E]):
+    """Represents successful computation with value of type T."""
     _value: T
     
     @override
-    def map(self, op: Callable[[T], "U"]) -> "Result[U, E]":
+    def map(self, op: Callable[[T], U]) -> Result[U, E]:
+        """Apply operation to success value."""
         return Ok(op(self._value))
+    
+    @override
+    def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, Union[F, E]]:
+        """Apply operation that returns Result, accumulating error type."""
+        return op(self._value)  # type: ignore
     
     # ... 其他方法
 
 @dataclass(frozen=True)
 class Err(Result[T, E]):
+    """Represents failed computation with error of type E."""
     _error: E
-    _context: Optional[dict] = None
     
     @override
-    def map(self, op: Callable[[T], "U"]) -> "Result[U, E]":
-        return self
+    def map(self, op: Callable[[T], U]) -> Result[U, E]:
+        """Operation skipped for Err variant."""
+        return self  # type: ignore
+    
+    @override
+    def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, Union[F, E]]:
+        """Operation skipped, but error type is updated to Union via type system."""
+        return self  # type: ignore
     
     # ... 其他方法
 
