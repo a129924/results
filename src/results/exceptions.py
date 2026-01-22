@@ -17,6 +17,7 @@ but its use is completely optional.
 
 from abc import abstractmethod
 from dataclasses import astuple, dataclass
+from typing import Any
 
 
 class ResultError(Exception):
@@ -34,12 +35,12 @@ class UnwrapError(ResultError):
     """Exception raised when unwrap() is called on an Err value.
 
     This occurs when code attempts to extract the value from an Err Result
-    without first checking if it's Ok. The original exception is available
-    via the cause chain.
+    without first checking if it's Ok. The original error is available
+    via the original_error attribute (can be any type, not just Exception).
 
     Attributes:
         message: Description of the unwrap failure
-        original_error: The exception that was wrapped in the Err
+        original_error: The value that was wrapped in the Err (any type)
 
     Example:
         >>> from results import Err, UnwrapError
@@ -48,14 +49,20 @@ class UnwrapError(ResultError):
         ...     result.unwrap()
         ... except UnwrapError as e:
         ...     print(e)  # UnwrapError: Attempted to unwrap an Err value
+
+        >>> result2 = Err("error string")
+        >>> try:
+        ...     result2.unwrap()
+        ... except UnwrapError as e:
+        ...     print(e.original_error)  # "error string"
     """
 
-    def __init__(self, message: str, original_error: Exception) -> None:
+    def __init__(self, message: str, original_error: Any) -> None:
         """Initialize UnwrapError with context.
 
         Parameters:
             message: Error message describing the unwrap failure
-            original_error: The exception originally wrapped in Err
+            original_error: The value originally wrapped in Err (any type)
         """
         self.message = message
         self.original_error = original_error

@@ -19,10 +19,10 @@ from typing import TypeVar
 T = TypeVar("T")
 
 # Error type variable
-# Bound to Exception to ensure all errors are proper exceptions
-# This guarantees compatibility with Python's exception handling and logging
-# Example: Result[User, GetUserError] means E=GetUserError (must inherit Exception)
-E = TypeVar("E", bound=Exception)
+# No constraints - can be any type, following Rust's Result<T, E> design
+# While Exception is the recommended usage, strings, ints, dicts, etc. are valid
+# Example: Result[User, GetUserError] or Result[int, str] or Result[str, dict]
+E = TypeVar("E")
 
 # Transformation output type variable
 # Used internally in method signatures for map operations
@@ -32,9 +32,10 @@ U = TypeVar("U")
 
 # Alternative error type variable
 # Used in error composition and and_then operations
+# No constraints - can be any type, same as E
 # Represents the error type from a chained operation
-# Example: result.and_then(fn) -> Result[U, Union[F, E]] where F is the new error type
-F = TypeVar("F", bound=Exception)
+# Example: result.and_then(fn) -> Result[U, F | E] where F is the new error type
+F = TypeVar("F")
 
 __all__ = [
     "T",
