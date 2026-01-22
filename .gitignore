@@ -1,0 +1,9 @@
+plan/
+.python-version
+__pycache__/
+*.pyc
+.env
+.vscode/
+.github/
+.DS_Store
+ai-agent-rules/
