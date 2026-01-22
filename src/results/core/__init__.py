@@ -1,14 +1,23 @@
-"""Result 類型系統的核心契約層。
+"""Result type system core contract layer.
 
-此模組定義了 Result 類型的抽象基類（ABC）和型別變數。
-所有具體實現都必須遵循此層定義的契約。
+This module defines the Result abstract base class (ABC) and type variables.
+All concrete implementations must adhere to the contract defined here.
+
+Exports:
+    - Result: The abstract base class for all Result implementations
+    - T: Type variable for success value (no constraints)
+    - E: Type variable for error type (bound=Exception)
+    - U: Type variable for transformation output
+    - F: Type variable for alternative error types
 """
 
 from .base import Result
-from .types import E, T
+from .types import E, F, T, U
 
 __all__ = [
     "Result",
     "T",
     "E",
+    "U",
+    "F",
 ]
