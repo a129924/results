@@ -1,4 +1,15 @@
-"""Result 類型系統的具體實現層。
+"""Result type system concrete implementations.
 
-此模組包含 Result 的同步和非同步實現。
+This module contains the synchronous and asynchronous Result implementations.
+
+Submodules:
+    sync: Synchronous implementation (Ok, Err)
+    async_: Asynchronous implementation (reserved for future use)
 """
+
+from results.impl.sync import Err, Ok
+
+__all__ = [
+    "Ok",
+    "Err",
+]
