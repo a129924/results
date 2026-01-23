@@ -7,3 +7,4 @@ __pycache__/
 .github/
 .DS_Store
 ai-agent-rules/
+legacy/
