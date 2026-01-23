@@ -161,7 +161,7 @@ class TestErrAndThen:
             return Ok(x * 2)
 
         result: Result[int, str] = Err("error")
-        chained = result.and_then(operation)
+        result.and_then(operation)
         assert call_count == 0  # Operation not called
 
     def test_and_then_returns_error_unchanged(self) -> None:
@@ -225,9 +225,7 @@ class TestErrEquality:
     def test_err_equals_with_exception(self) -> None:
         """Test Err equality with exceptions."""
         error1 = ValueError("test")
-        error2 = ValueError("test")
         err1: Result[int, ValueError] = Err(error1)
-        err2: Result[int, ValueError] = Err(error2)
         # Different exception objects, but might have equal representation
         assert err1.err() is error1
 

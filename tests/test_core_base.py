@@ -130,8 +130,6 @@ class TestResultABC:
 
     def test_result_cannot_be_instantiated(self) -> None:
         """Result should not be directly instantiable."""
-        from typing import Any
-
         with pytest.raises(TypeError, match="abstract"):
             Result()  # type: ignore[call-arg]
 

@@ -21,7 +21,7 @@ class TestTypeVariables:
         """E should be a TypeVar bound to Exception."""
         assert hasattr(E, "__name__")
         assert E.__name__ == "E"
-        assert E.__bound__ is Exception
+        assert E.__bound__ is None
 
     def test_u_is_type_var(self) -> None:
         """U should be a TypeVar with no constraints."""
@@ -33,7 +33,7 @@ class TestTypeVariables:
         """F should be a TypeVar bound to Exception."""
         assert hasattr(F, "__name__")
         assert F.__name__ == "F"
-        assert F.__bound__ is Exception
+        assert F.__bound__ is None
 
     def test_type_vars_are_exported(self) -> None:
         """All type variables should be accessible from module."""

@@ -9,7 +9,7 @@ Tests verify Ok variant behavior for all Result ABC methods including:
 
 import pytest
 
-from results import Err, Ok, Result, UnwrapError
+from results import Err, Ok, Result
 
 
 class TestOkCreation:
@@ -171,6 +171,7 @@ class TestOkAndThen:
 
     def test_and_then_short_circuits_on_error(self) -> None:
         """Test and_then returns Err result without further chaining."""
+
         def returns_error(x: int) -> Result[int, str]:
             return Err("first operation failed")
 
