@@ -264,14 +264,14 @@ CHANGELOG.md                          # 版本記錄（預留）
 
 ## 4. 驗收標準
 
-### 4.1 功能驗收 ✅ Stage 2 & 3 完成
+### 4.1 功能驗收 ✅ Stage 2, 3 & 4 完成
 
 - [x] Result 作為 ABC，無法直接實例化
 - [x] Ok[T] 實現所有契約方法，_value 私密
 - [x] Err[E] 實現所有契約方法，_error 私密
 - [x] map() 和 map_err() 型別簽名正確
 - [x] and_then() 支援 Result 的再次返回（Union 型別累積）
-- [x] unwrap() 失敗時拋 UnwrapError
+- [x] unwrap() 失敗時拋 UnwrapError（支援 Exception 直接拋出 + 非 Exception 用 UnwrapError 包裝）
 - [x] ok() 和 err() 返回 Optional 型別
 - [x] and_then 型別簽名自動累積 Union 錯誤
 
@@ -414,6 +414,12 @@ v0.1.0 - Initial Result Type System
     - git tag v0.1.0 已建立
     - 標籤已推送到遠程
     - 6 個 commit 已推送
+  - [x] 2026-01-23 晚間：unwrap() 智慧型例外處理改進
+    - Err.unwrap() 支援 Exception 直接拋出 + 非 Exception 用 UnwrapError 包裝
+    - isinstance(self._error, Exception) 檢查
+    - Exception 使用 `raise self._error from self._error` 保留原始 traceback
+    - 非 Exception 型別（str、int 等）包裝在 UnwrapError 中
+    - 提交到 dev 分支並驗證所有測試通過
 
 ### 完成檢查清單
 
