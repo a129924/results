@@ -421,13 +421,27 @@ v0.1.0 - Initial Result Type System
     - 非 Exception 型別（str、int 等）包裝在 UnwrapError 中
     - 提交到 dev 分支並驗證所有測試通過
 
+- ✅ **Stage 4 補充（2026-01-23）：** Traceback 設計決策與版本規劃
+  - [x] 2026-01-23 晚間：確認 Traceback 設計決策
+    - Result 類型不自動捕獲 traceback（與 Rust Result 一致）
+    - 簡潔路徑：直接 return Err — 無 traceback
+    - 保留上下文路徑：try-except + return Err — 保留 traceback
+    - 決策已文檔化在計劃和 README 中
+  - [x] 2026-01-23 晚間：版本規劃確定
+    - v0.1.0：當前發佈版（核心系統 + 117 測試 + 完整文檔）
+    - v0.2.0：traceback 改進 + 錯誤鏈記錄 + with_context() 方法
+    - v0.3.0：非同步支援（AsyncResult）+ context manager
+    - v0.4.0：logging 整合 + 診斷工具
+
 ### 完成檢查清單
 
 - [x] 所有代碼實現完成 ✅
 - [x] 所有測試通過 (117/117) ✅
 - [x] 所有文檔完成 ✅
 - [x] git tag v0.1.0 發佈 ✅
-- [ ] main 分支已更新（待 PR merge）
+- [x] dev 分支已更新（merged feat/core-result-type）✅
+- [x] 設計決策文檔化（traceback + 版本規劃）✅
+- [ ] main 分支已更新（待 dev → main merge）
 
 ---
 

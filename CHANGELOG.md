@@ -66,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 3. **Frozen dataclasses** — Immutability without overhead
 4. **Type accumulation** — and_then automatically composes error types via `|` operator
 5. **Private attributes** — Only accessible via public methods (ok(), err())
+6. **Traceback handling** — No automatic capture (matches Rust Result<T, E> design)
+   - Simple path: `return Err(MyError(...))` — Clean but no traceback
+   - Rich context path: `try-except` then `return Err(e)` — Preserves traceback
+   - v0.2.0: Optional `with_context()` for automatic capture (anyhow-style)
 
 ### Known Limitations
 
@@ -75,9 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Future Roadmap
 
-- [ ] v0.2.0 — Async variants (AsyncOk, AsyncErr)
-- [ ] v0.3.0 — Custom error context tracking
-- [ ] v0.4.0 — Integration with logging framework
+- [x] v0.1.0 — Core Result type system (RELEASED)
+- [ ] v0.2.0 — Traceback context capture, error chaining (anyhow-style)
+- [ ] v0.3.0 — Async variants (AsyncResult), context manager support
+- [ ] v0.4.0 — Logging integration, diagnostic tools
+- [ ] v0.5.0 — Performance optimizations, comprehensive benchmarks
 
 ---
 

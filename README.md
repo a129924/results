@@ -186,7 +186,34 @@ else:
     print(f"Registration failed: {error}")
 ```
 
-## 📚 API Reference
+## � Error Handling: Traceback and Context
+
+**Design Philosophy:** Like Rust's Result type, `results` intentionally does NOT auto-capture tracebacks. This gives you two clear paths:
+
+### Path 1: Simple (No Traceback)
+```python
+def validate_age(age: int) -> Result[int, str]:
+    if age >= 18:
+        return Ok(age)
+    else:
+        return Err("User is underage")  # Simple but no traceback info
+```
+
+### Path 2: Preserve Traceback
+```python
+def validate_age_with_context(age: int) -> Result[int, Exception]:
+    try:
+        if age >= 18:
+            return Ok(age)
+        else:
+            raise ValueError("User is underage")
+    except (ValueError, TypeError) as e:
+        return Err(e)  # Preserves exception and traceback
+```
+
+> **Note:** v0.2.0 will introduce optional `with_context()` for automatic traceback capture (similar to `anyhow::Context` in Rust).
+
+## �📚 API Reference
 
 ### Result Type
 
