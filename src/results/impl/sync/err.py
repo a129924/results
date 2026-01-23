@@ -34,7 +34,7 @@ class Err(Result[T, E], Generic[T, E]):
 
     Type Parameters:
         T: The type of the success value (unused in Err but preserved for Result[T, E])
-        E: The error type (bound to Exception)
+        E: The error type (unconstrained, supports any type - Exception, str, int, dict, etc.)
 
     Attributes:
         _error (E): The error value - private attribute accessible via err() method
@@ -129,6 +129,8 @@ class Err(Result[T, E], Generic[T, E]):
             Called unwrap on Err
             ValueError('invalid')
         """
+        if isinstance(self._error, Exception):
+            raise self._error from self._error
         raise UnwrapError("Called unwrap on Err", self._error)
 
     @override
