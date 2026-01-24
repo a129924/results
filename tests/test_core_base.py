@@ -76,6 +76,25 @@ class ConcreteOk(Result[int, ValueError_]):
         except Exception as e:
             return ConcreteErr(ValueError_(str(e)))  # type: ignore
 
+    @override
+    def inspect(self, f: Callable[[int], None]) -> "Result[int, ValueError_]":
+        f(self._value)
+        return self
+
+    @override
+    def inspect_err(
+        self, f: Callable[[ValueError_], None]
+    ) -> "Result[int, ValueError_]":
+        return self
+
+    @override
+    def context(self, msg: str) -> "Result[int, ValueError_]":
+        return self
+
+    @override
+    def with_context(self, f: Callable[[], str]) -> "Result[int, ValueError_]":
+        return self
+
 
 @dataclass(frozen=True)
 class ConcreteErr(Result[int, ValueError_]):
@@ -119,6 +138,25 @@ class ConcreteErr(Result[int, ValueError_]):
         self, op: Callable[[int], Result[int, RuntimeError_]]
     ) -> Result[int, RuntimeError_ | ValueError_]:
         return self  # type: ignore
+
+    @override
+    def inspect(self, f: Callable[[int], None]) -> "Result[int, ValueError_]":
+        return self
+
+    @override
+    def inspect_err(
+        self, f: Callable[[ValueError_], None]
+    ) -> "Result[int, ValueError_]":
+        f(self._error)
+        return self
+
+    @override
+    def context(self, msg: str) -> "Result[int, ValueError_]":
+        return self
+
+    @override
+    def with_context(self, f: Callable[[], str]) -> "Result[int, ValueError_]":
+        return self
 
 
 class TestResultABC:
@@ -220,6 +258,10 @@ class TestResultABC:
             "map",
             "map_err",
             "and_then",
+            "inspect",
+            "inspect_err",
+            "context",
+            "with_context",
         }
         result_abstract_methods = Result.__abstractmethods__
         assert abstract_methods == result_abstract_methods
