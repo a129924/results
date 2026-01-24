@@ -214,16 +214,18 @@ class Err(Result[T, E], Generic[T, E]):
 
     @override
     def map_err(self, op: Callable[[E], F]) -> Result[T, F]:
-        """Transform error type, preserving success value.
+        """Transform error type, preserving success value and context chain.
 
         Applies the given function to the error value and wraps the result
-        in Err. If operation raises an exception, it propagates.
+        in Err with the original context chain preserved. If operation raises
+        an exception, it propagates.
 
         Parameters:
             op: Function that transforms E to F
 
         Returns:
-            Result[T, F]: Err containing transformed error, or exception if op fails
+            Result[T, F]: Err containing transformed error with context preserved,
+                         or exception if op fails
 
         Raises:
             Any exception raised by op(self._error) will propagate
@@ -234,8 +236,14 @@ class Err(Result[T, E], Generic[T, E]):
             >>> transformed = result.map_err(lambda e: RuntimeError(str(e)))
             >>> isinstance(transformed.err(), RuntimeError)
             True
+
+            >>> # With context chain
+            >>> result = Err(ValueError("error")).context("ctx")
+            >>> transformed = result.map_err(str)
+            >>> transformed._context_chain
+            ('ctx',)
         """
-        return Err(op(self._error))
+        return Err(op(self._error), _context_chain=self._context_chain)
 
     @override
     def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, F | E]:
