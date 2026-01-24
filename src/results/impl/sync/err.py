@@ -38,6 +38,11 @@ class Err(Result[T, E], Generic[T, E]):
 
     Attributes:
         _error (E): The error value - private attribute accessible via err() method
+        _context_chain (tuple[str, ...]): Chain of context messages in LIFO order.
+            - Empty tuple by default (v0.1.0 compatibility)
+            - Newest context at index 0 (accessed first when unwrapping)
+            - Oldest context at index -1 (appended last)
+            - Implements Rust anyhow-style context stacking
 
     Example:
         >>> from results import Ok, Err
@@ -50,9 +55,17 @@ class Err(Result[T, E], Generic[T, E]):
         ValueError('invalid input')
         >>> result.map(lambda x: x * 2).is_err()
         True
+
+        >>> # Context chain example (v0.2.0+)
+        >>> result = Err(ValueError("parse failed"))
+        >>> result = result.context("parsing config file")
+        >>> result = result.context("loading configuration")
+        >>> result._context_chain
+        ('loading configuration', 'parsing config file')
     """
 
     _error: E
+    _context_chain: tuple[str, ...] = ()
 
     @override
     def is_ok(self) -> bool:
@@ -108,29 +121,71 @@ class Err(Result[T, E], Generic[T, E]):
 
     @override
     def unwrap(self) -> Never:
-        """Extract value or raise UnwrapError.
+        """Extract value or raise UnwrapError with context chain display.
 
-        For Err variant, raises UnwrapError containing the original error.
+        For Err variant, raises the original exception (if Exception type) with
+        context chain information, or raises UnwrapError for non-Exception types.
+
+        If context chain is non-empty, formats and prepends context messages
+        in LIFO order (newest context first) before raising.
 
         Returns:
             Never: Never returns (always raises)
 
         Raises:
-            UnwrapError: Always raised, containing the original error and message
+            Exception: If _error is an Exception, raises it directly with traceback.
+                If context chain is non-empty, it's included in the message.
+            UnwrapError: If _error is not an Exception, wraps it in UnwrapError.
 
         Example:
             >>> from results import Err, UnwrapError
             >>> result = Err(ValueError("invalid"))
             >>> try:
             ...     result.unwrap()
+            ... except ValueError as e:
+            ...     # Exception type: raised directly
+            ...     print(str(e))
+            invalid
+
+            >>> # With context chain
+            >>> result = (
+            ...     Err(ValueError("parse failed"))
+            ...     .context("validating user age")
+            ...     .context("processing user data")
+            ... )
+            >>> try:
+            ...     result.unwrap()
+            ... except ValueError as e:
+            ...     # Context prepended to message
+            ...     print(str(e))
+            processing user data
+            validating user age
+            parse failed
+
+            >>> # Non-Exception type
+            >>> result = Err("string error")
+            >>> try:
+            ...     result.unwrap()
             ... except UnwrapError as e:
             ...     print(e.message)
             ...     print(e.original_error)
             Called unwrap on Err
-            ValueError('invalid')
+            string error
         """
         if isinstance(self._error, Exception):
+            # Format context chain if present
+            if self._context_chain:
+                # LIFO order: newest context first
+                context_str = "\n".join(f"  {ctx}" for ctx in self._context_chain)
+                error_msg = f"{context_str}\n  {str(self._error)}"
+                # Create a new exception with context message, preserve original traceback
+                exc = type(self._error)(error_msg)
+
+                raise exc from self._error
+            # No context, raise directly
             raise self._error from self._error
+
+        # Non-Exception: wrap in UnwrapError
         raise UnwrapError("Called unwrap on Err", self._error)
 
     @override
@@ -159,16 +214,18 @@ class Err(Result[T, E], Generic[T, E]):
 
     @override
     def map_err(self, op: Callable[[E], F]) -> Result[T, F]:
-        """Transform error type, preserving success value.
+        """Transform error type, preserving success value and context chain.
 
         Applies the given function to the error value and wraps the result
-        in Err. If operation raises an exception, it propagates.
+        in Err with the original context chain preserved. If operation raises
+        an exception, it propagates.
 
         Parameters:
             op: Function that transforms E to F
 
         Returns:
-            Result[T, F]: Err containing transformed error, or exception if op fails
+            Result[T, F]: Err containing transformed error with context preserved,
+                         or exception if op fails
 
         Raises:
             Any exception raised by op(self._error) will propagate
@@ -179,8 +236,14 @@ class Err(Result[T, E], Generic[T, E]):
             >>> transformed = result.map_err(lambda e: RuntimeError(str(e)))
             >>> isinstance(transformed.err(), RuntimeError)
             True
+
+            >>> # With context chain
+            >>> result = Err(ValueError("error")).context("ctx")
+            >>> transformed = result.map_err(str)
+            >>> transformed._context_chain
+            ('ctx',)
         """
-        return Err(op(self._error))
+        return Err(op(self._error), _context_chain=self._context_chain)
 
     @override
     def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, F | E]:
@@ -218,18 +281,147 @@ class Err(Result[T, E], Generic[T, E]):
         """
         return self  # type: ignore
 
+    @override
+    def inspect(self, f: Callable[[T], None]) -> Result[T, E]:
+        """Inspect success value for debugging without modifying the Result.
+
+        Calls the given function with the success value for side effects (logging,
+        printing, etc.) and returns self unchanged. This is a pure debugging tool -
+        the callable cannot modify the Result.
+
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Function that takes the success value T and performs side effects
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> result = Err(ValueError("invalid input"))
+            >>> result.inspect(lambda v: print(f"Value: {v}"))
+            # Does nothing, returns Err(ValueError("invalid input"))
+
+            >>> result.inspect(lambda v: log_value(v)).map_err(str)
+            # Logs nothing, returns Err("invalid input")
+        """
+        return self
+
+    @override
+    def inspect_err(self, f: Callable[[E], None]) -> Result[T, E]:
+        """Inspect error value for debugging without modifying the Result.
+
+        Calls the given function with the error value for side effects (logging,
+        printing, etc.) and returns self unchanged. This is a pure debugging tool -
+        the callable cannot modify the Result.
+
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Function that takes the error value E and performs side effects
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> result = Err(ValueError("invalid input"))
+            >>> result.inspect_err(lambda e: print(f"Error occurred: {e}"))
+            # Prints "Error occurred: invalid input"
+            # Returns Err(ValueError("invalid input"))
+
+            >>> result.inspect_err(lambda e: log_error(e)).map_err(str)
+            # Logs the error, returns Err("invalid input")
+        """
+        f(self._error)
+        return self
+
+    @override
+    def context(self, msg: str) -> Result[T, E]:
+        """Push context message to error chain (eager evaluation).
+
+        Pushes the context message to the error chain in LIFO order (newest first).
+        Returns a new Err with the message prepended to the context chain.
+
+        This method is for static/predefined context strings. For dynamic context
+        that depends on runtime values, use with_context() instead.
+
+        Parameters:
+            msg: Context message to add to the chain
+
+        Returns:
+            Result[T, E]: New Err with context pushed, old Err unchanged
+
+        Example:
+            >>> result = Err(ValueError("parse error"))
+            >>> result = result.context("parsing config")
+            >>> result._context_chain
+            ('parsing config',)
+
+            >>> result = result.context("loading app")
+            >>> result._context_chain
+            ('loading app', 'parsing config')  # LIFO order
+
+            >>> # Chainable
+            >>> result = (
+            ...     Err(ValueError("error"))
+            ...     .context("step C")
+            ...     .context("step B")
+            ...     .context("step A")
+            ... )
+            >>> result._context_chain
+            ('step A', 'step B', 'step C')  # Reversed by LIFO stacking
+        """
+        return Err(self._error, _context_chain=(msg, *self._context_chain))
+
+    @override
+    def with_context(self, f: Callable[[], str]) -> Result[T, E]:
+        """Push lazy context message to error chain (delayed evaluation).
+
+        Calls the function to generate a context message, then pushes it to the
+        error chain in LIFO order. Returns a new Err with the generated message
+        added to the context chain.
+
+        Lazy evaluation allows context generation to depend on runtime state
+        (timestamps, environment, etc.) without overhead for Ok cases.
+
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Callable that returns context message string
+
+        Returns:
+            Result[T, E]: New Err with lazy context pushed, old Err unchanged
+
+        Raises:
+            Any exception raised by f() will propagate
+
+        Example:
+            >>> from datetime import datetime
+            >>> result = Err(ValueError("API error"))
+            >>> result = result.with_context(lambda: f"Failed at {datetime.now()}")
+            >>> # Context generated immediately and added to chain
+
+            >>> result = Ok(200)
+            >>> result = result.with_context(lambda: expensive_debug_info())
+            # Returns Ok(200), f() NOT called (no overhead for success case)
+        """
+        return self.context(f())
+
     def __repr__(self) -> str:
         """Return string representation for debugging.
 
         Returns:
-            str: String like "Err(ValueError('invalid'))"
+            str: String like "Err(ValueError('invalid'))" or with context chain
+                "Err(ValueError('invalid'), context=['step B', 'step A'])"
 
         Example:
             >>> repr(Err(ValueError("invalid")))
             "Err(ValueError('invalid'))"
-            >>> repr(Err(RuntimeError("failed")))
-            "Err(RuntimeError('failed'))"
+            >>> repr(Err(RuntimeError("failed")).context("processing"))
+            "Err(RuntimeError('failed'), context=('processing',))"
         """
+        if self._context_chain:
+            return f"Err({self._error!r}, context={self._context_chain!r})"
         return f"Err({self._error!r})"
 
     def __eq__(self, other: object) -> bool:

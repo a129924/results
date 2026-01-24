@@ -168,6 +168,111 @@ class Ok(Result[T, E], Generic[T, E]):
         return self  # type: ignore
 
     @override
+    def inspect(self, f: Callable[[T], None]) -> Result[T, E]:
+        """Inspect success value for debugging without modifying the Result.
+
+        Calls the given function with the success value for side effects (logging,
+        printing, etc.) and returns self unchanged. This is a pure debugging tool -
+        the callable cannot modify the Result.
+
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Function that takes the success value T and performs side effects
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> result = Ok(42)
+            >>> result.inspect(lambda x: print(f"Value: {x}"))
+            # Prints "Value: 42"
+            # Returns Ok(42)
+
+            >>> Ok(5).inspect(lambda x: print(f"Doubling {x}")).map(lambda x: x * 2).ok()
+            # Prints "Doubling 5"
+            # Returns 10
+
+            >>> # Chainable with other operations
+            >>> Ok(data).inspect(log_step1).map(transform).inspect(log_step2).unwrap()
+        """
+        f(self._value)
+
+        return self
+
+    @override
+    def inspect_err(self, f: Callable[[E], None]) -> Result[T, E]:
+        """Inspect error value for debugging without modifying the Result.
+
+        For Ok variant, the function is not called and self is returned unchanged.
+        This method exists for API consistency and type safety - allows code to
+        call inspect_err() on Result[T, E] without knowing if it's Ok or Err.
+
+        Parameters:
+            f: Function that takes the error value E (not called for Ok)
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> Ok(42).inspect_err(lambda e: print(f"Error: {e}"))
+            # Prints nothing, returns Ok(42)
+
+            >>> # Useful for handling both Ok and Err in same chain
+            >>> result: Result[int, ValueError] = fetch_user_id()
+            >>> result.inspect_err(log_error).ok()  # Works for both Ok and Err
+        """
+        return self
+
+    @override
+    def context(self, msg: str) -> Result[T, E]:
+        """Push context message to error chain (eager evaluation).
+
+        For Ok variant, the context message is ignored and self is returned unchanged.
+        This method exists for API consistency and type safety - allows code to call
+        context() on Result[T, E] without knowing if it's Ok or Err.
+
+        Parameters:
+            msg: Context message (not used for Ok)
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> Ok(42).context("some context")
+            # Returns Ok(42) unchanged, message ignored
+
+            >>> # Useful for handling both Ok and Err without branching
+            >>> result = fetch_data().context("data fetch")
+            >>> # Works regardless of whether fetch_data returned Ok or Err
+        """
+        return self
+
+    @override
+    def with_context(self, f: Callable[[], str]) -> Result[T, E]:
+        """Push lazy context message to error chain (delayed evaluation).
+
+        For Ok variant, the function is not called and self is returned unchanged.
+        This method exists for API consistency and type safety. Lazy evaluation
+        ensures no overhead for Ok cases - the callable is never invoked.
+
+        Parameters:
+            f: Callable that generates context message (not called for Ok)
+
+        Returns:
+            Result[T, E]: Self unchanged
+
+        Example:
+            >>> Ok(42).with_context(lambda: expensive_debug_info())
+            # Returns Ok(42) unchanged, callable NOT invoked (zero overhead)
+
+            >>> # Useful for handling both Ok and Err without branching
+            >>> result = fetch_data().with_context(lambda: f"at {now()}")
+            >>> # For Ok cases, now() is never called (efficient)
+        """
+        return self
+
+    @override
     def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, F | E]:
         """Chain operations, automatically accumulating error types via Union.
 
