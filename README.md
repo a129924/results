@@ -36,6 +36,7 @@ else:
 - ✅ **Python 3.10+ Native** — Uses PEP 604 union syntax (`|` instead of `Union`)
 - ✅ **Flexible Error Types** — Support any type as error (Exception, str, int, dict, etc.)
 - ✅ **Comprehensive Tests** — 117 tests covering unit/integration scenarios
+- ✅ **API Stability** — Core APIs are [stable and locked](STABILITY.md) for v1.0
 
 ## 📦 Installation
 
@@ -300,6 +301,24 @@ mypy src/results/ --strict
 # Code style
 ruff check src/results/ tests/
 ```
+
+## 📋 API Stability & Versioning
+
+We make explicit stability guarantees:
+
+**v0.1.0 Stable APIs:**
+- ✅ All 8 core methods (`is_ok`, `is_err`, `ok`, `err`, `map`, `map_err`, `and_then`, `unwrap`)
+- ✅ Result[T, E], Ok[T], Err[E] types
+- ✅ Exception hierarchy (ResultError, UnwrapError, BaseError)
+
+**Stability Guarantee:**
+Your code using v0.1.0 core APIs **will work unchanged** in v0.2.0, v0.3.0, and beyond until v2.0.0.
+
+**See [STABILITY.md](STABILITY.md) for:**
+- Full API stability tiers
+- v0.2.0 / v0.3.0 planned additions
+- Deprecation policy
+- Breaking change roadmap
 
 ## 🏗️ Architecture
 
