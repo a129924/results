@@ -43,7 +43,7 @@ Core Result type system:
 
 ### 🟡 Tier 2: Stable (Released Functional Enhancement)
 
-**Status:** Committed to stability, released as part of v0.2.0
+**Status:** Committed to stability, released as part of v0.2.0+
 
 Debug and context chain tools:
 
@@ -58,6 +58,31 @@ Debug and context chain tools:
 **Commitment:**
 - Considered stable and suitable for production use
 - LIFO context chain behavior is guaranteed
+- No breaking changes planned
+
+**Async/Await Support** (v0.3.0):
+
+| API | Version Added | Status |
+|-----|----------------|--------|
+| `AsyncResult[T, E]` | v0.3.0 | ✅ Stable |
+| `AsyncResult.__await__()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.resolve()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.map_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.map_err_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.and_then_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.inspect_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.inspect_err_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.unwrap_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.context()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.with_context()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.from_result()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.from_awaitable()` | v0.3.0 | ✅ Stable |
+
+**Commitment:**
+- Async operations fully stable and production-ready
+- LIFO context chain behavior preserved across await boundaries
+- Seamless async/sync interoperability guaranteed
+- Full type safety with mypy --strict
 - No breaking changes planned
 
 ---
@@ -92,6 +117,23 @@ Debug and context chain tools:
 - v0.1.0 code runs unchanged on v0.2.0+
 - No breaking changes to existing APIs
 - Private attributes (prefixed with `_`) are not part of public API and may change
+
+---
+
+---
+
+## Compatibility Matrix
+
+| Feature | v0.1.0 | v0.2.0 | v0.3.0+ |
+|---------|--------|--------|---------|
+| Core Result (Ok/Err) | ✅ | ✅ | ✅ |
+| map/map_err/and_then | ✅ | ✅ | ✅ |
+| inspect/inspect_err | ❌ | ✅ | ✅ |
+| context/with_context | ❌ | ✅ | ✅ |
+| AsyncResult | ❌ | ❌ | ✅ |
+| Async chaining | ❌ | ❌ | ✅ |
+| Python 3.10+ | ✅ | ✅ | ✅ |
+| mypy --strict | ✅ | ✅ | ✅ |
 
 ---
 

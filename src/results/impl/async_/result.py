@@ -13,6 +13,7 @@ and evaluate them atomically on await/resolve, reducing branching complexity.
 
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Generator
 from dataclasses import dataclass
@@ -87,7 +88,7 @@ class AsyncResult(AsyncResultBase[T, E]):
     - Await and resolve() return identical Result[T, E]
 
     Attributes:
-        _awaitable: The wrapped Awaitable[Result[T, E]]
+        _resolver: Callable that returns Awaitable[Result[T, E]]
         _context_chain: Tuple of context messages (head = most recent, LIFO)
 
     Type Parameters:
@@ -116,7 +117,7 @@ class AsyncResult(AsyncResultBase[T, E]):
             ... )
     """
 
-    _awaitable: Awaitable[Result[T, E]]
+    _resolver: Callable[[], Awaitable[Result[T, E]]]
     _context_chain: tuple[str, ...] = ()
 
     def __await__(self) -> Generator[Any, None, Result[T, E]]:
@@ -130,7 +131,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         Returns:
             Result[T, E]: The final Result after evaluating operation queue
         """
-        return self._awaitable.__await__()
+        return self._resolver().__await__()
 
     @override
     async def unwrap_async(self) -> T:
@@ -203,7 +204,7 @@ class AsyncResult(AsyncResultBase[T, E]):
             >>> # Context order (LIFO): "step 2" → "step 1"
         """
         new_stack = (msg,) + self._context_chain
-        return AsyncResult(self._awaitable, new_stack)
+        return AsyncResult(self._resolver, new_stack)
 
     @override
     def with_context(self, f: Callable[[], str]) -> AsyncResult[T, E]:
@@ -248,7 +249,7 @@ class AsyncResult(AsyncResultBase[T, E]):
                 return Ok(transformed_value)
             return current.map_err(lambda e: e)  # type: ignore
 
-        return AsyncResult(transformed(), self._context_chain)
+        return AsyncResult(lambda: transformed(), self._context_chain)
 
     @override
     def map_err_async(self, fn: Callable[[E], Awaitable[F]]) -> AsyncResult[T, F]:
@@ -276,7 +277,7 @@ class AsyncResult(AsyncResultBase[T, E]):
                 return Err(transformed_error)
             return current.map(lambda t: t)  # type: ignore
 
-        return AsyncResult(transformed(), self._context_chain)
+        return AsyncResult(lambda: transformed(), self._context_chain)
 
     @override
     def and_then_async(
@@ -307,7 +308,7 @@ class AsyncResult(AsyncResultBase[T, E]):
             # Err: short-circuit, error type expands to E | F
             return current.map_err(lambda e: e)  # type: ignore
 
-        return AsyncResult(transformed(), self._context_chain)
+        return AsyncResult(lambda: transformed(), self._context_chain)
 
     @override
     async def inspect_async(
@@ -378,7 +379,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         async def resolved() -> Result[T, E]:
             return result
 
-        return AsyncResult(resolved())
+        return AsyncResult(lambda: resolved())
 
     @staticmethod
     def from_awaitable(aw: Awaitable[Result[T, E]]) -> AsyncResult[T, E]:
@@ -398,13 +399,33 @@ class AsyncResult(AsyncResultBase[T, E]):
             >>> async_result = AsyncResult.from_awaitable(fetch())
             >>> result = await async_result  # Ok("data")
         """
-        return AsyncResult(aw)
+        return AsyncResult(AsyncResult._wrap_awaitable(aw))
+
+    @staticmethod
+    def _wrap_awaitable(
+        aw: Awaitable[Result[T, E]],
+    ) -> Callable[[], Awaitable[Result[T, E]]]:
+        """Wrap awaitable to support multiple awaits by caching in-flight task."""
+
+        task: asyncio.Future[Result[T, E]] | None = None
+
+        async def resolver() -> Result[T, E]:
+            nonlocal task
+            if task is None:
+                loop = asyncio.get_running_loop()
+                if isinstance(aw, asyncio.Future):
+                    task = aw
+                else:
+                    task = loop.create_task(aw)  # type: ignore
+            return await task
+
+        return resolver
 
     def __repr__(self) -> str:
         """Return debug representation."""
         return (
             f"AsyncResult("
-            f"_awaitable={self._awaitable!r}, "
+            f"_resolver={self._resolver!r}, "
             f"_context_chain={self._context_chain!r})"
         )
 
