@@ -1,4 +1,10 @@
-"""Result 類型系統的非同步實現。
+"""Async Result implementations.
 
-此模組為非同步操作預留。
+This module provides AsyncResult, an awaitable wrapper for Result[T, E]
+that enables async/await workflows while maintaining LIFO context chain
+semantics identical to synchronous Result types.
 """
+
+from .result import AsyncResult
+
+__all__ = ["AsyncResult"]

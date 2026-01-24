@@ -2,7 +2,7 @@
 
 A type-safe, Pythonic implementation of Rust's `Result<T, E>` type for elegant error handling and functional programming.
 
-[![Tests](https://img.shields.io/badge/tests-166%2F166-green)](https://github.com/a129924/results)
+[![Tests](https://img.shields.io/badge/tests-187%2F187-green)](https://github.com/a129924/results)
 [![Type Checking](https://img.shields.io/badge/mypy%20%2D%2Dstrict-passing-green)](https://github.com/a129924/results)
 [![Code Style](https://img.shields.io/badge/ruff-all%20checks%20passed-green)](https://github.com/a129924/results)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
@@ -34,10 +34,11 @@ else:
 - ✅ **Functional Chains** — `map()`, `map_err()`, `and_then()` for elegant composition
 - ✅ **Debug Tools** — `inspect()` and `inspect_err()` for non-intrusive debugging
 - ✅ **Context Chain** — LIFO context stack for rich error diagnostics
+- ✅ **Async/Await Support** — `AsyncResult[T, E]` for non-blocking workflows
 - ✅ **Zero Runtime Overhead** — Frozen dataclasses, no magic
 - ✅ **Python 3.10+ Native** — Uses PEP 604 union syntax (`|` instead of `Union`)
 - ✅ **Flexible Error Types** — Support any type as error (Exception, str, int, dict, etc.)
-- ✅ **Comprehensive Tests** — 166 tests covering unit/integration scenarios
+- ✅ **Comprehensive Tests** — 187 tests covering sync/async unit/integration scenarios
 
 ## 📦 Installation
 
@@ -298,7 +299,7 @@ def validate_age_with_context(age: int) -> Result[int, Exception]:
         return Err(e)  # Preserves exception and traceback
 ```
 
-> **Note:** v0.2.0 will introduce optional `with_context()` for automatic traceback capture (similar to `anyhow::Context` in Rust).
+> **Note:** v0.2.0+ introduces `with_context()` and v0.3.0+ extends it to async workflows with context preservation across await boundaries.
 
 ## �📚 API Reference
 
@@ -376,6 +377,43 @@ class UnwrapError(ResultError):
         self.original_error = original_error
 ```
 
+## 🔄 Async/Await Support (v0.3.0+)
+
+AsyncResult enables non-blocking error handling with the same ergonomics as sync Result:
+
+```python
+from results import AsyncResult, Ok, Err
+
+async def fetch_user(user_id: int) -> AsyncResult[User, FetchError]:
+    """Fetch user asynchronously with error handling."""
+    async def fetch() -> Result[User, FetchError]:
+        try:
+            user = await db.fetch_user(user_id)
+            return Ok(user)
+        except DBError as e:
+            return Err(FetchError(str(e))).context("fetching user")
+    
+    return AsyncResult.from_awaitable(fetch())
+
+# Usage: Same chaining API as sync Result
+result = (
+    fetch_user(123)
+    .context("user service")
+    .and_then_async(lambda user: validate_user_async(user))
+    .map_async(lambda user: enrich_user_async(user))
+)
+
+user = await result.unwrap_async()  # Unwrap with full LIFO context chain
+```
+
+**Key Features:**
+- ✅ `map_async()`, `map_err_async()`, `and_then_async()` for async chaining
+- ✅ `unwrap_async()` with context chain in UnwrapError (same as sync)
+- ✅ `inspect_async()`, `inspect_err_async()` for side effects
+- ✅ LIFO context preservation across async boundaries
+- ✅ Seamless async/sync interoperability with `asyncio.to_thread()`
+- ✅ Full type safety with mypy --strict compliance
+
 ## 🧪 Testing
 
 Run all tests:
@@ -387,8 +425,11 @@ pytest tests/
 Run specific test categories:
 
 ```bash
-# Unit tests
+# Sync tests
 pytest tests/sync/ -v
+
+# Async tests
+pytest tests/async_/ -v
 
 # Integration tests
 pytest tests/integration/ -v
