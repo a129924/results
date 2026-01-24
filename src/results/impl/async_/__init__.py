@@ -1,8 +1,9 @@
 """Async Result implementations.
 
-This module provides AsyncOk and AsyncErr, which are awaitable variants of the
-synchronous Result type. They enable async/await workflows while maintaining
-LIFO context chain semantics identical to their sync counterparts.
+This module provides AsyncResult, an awaitable wrapper for Result[T, E]
+that enables async/await workflows while maintaining LIFO context chain
+semantics identical to synchronous Result types.
 """
 
-__all__ = ["AsyncOk", "AsyncErr"]
+# Placeholder: AsyncResult will be imported from result.py after implementation
+__all__ = ["AsyncResult"]
