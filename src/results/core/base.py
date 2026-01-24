@@ -189,3 +189,121 @@ class Result(ABC, Generic[T, E]):
             >>> Err(ValueError()).is_err()  # True
         """
         ...
+
+    @abstractmethod
+    def inspect(self, f: Callable[[T], None]) -> "Result[T, E]":
+        """Inspect success value for debugging without modifying the Result.
+
+        If this is Ok, applies the function to the wrapped value for side effects
+        (such as logging or printing) and returns self unchanged. If this is Err,
+        returns self unchanged without calling the function.
+
+        This is a pure debugging tool - the callable cannot modify the Result.
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Function that takes the success value and performs side effects
+
+        Returns:
+            Result[T, E]: Returns self unchanged
+
+        Example:
+            >>> result = Ok(42)
+            >>> result.inspect(lambda x: print(f"Value: {x}")).map(lambda x: x * 2)
+            # Prints "Value: 42", returns Ok(84)
+
+            >>> result = Err("error")
+            >>> result.inspect(lambda x: print(f"Value: {x}"))
+            # Prints nothing, returns Err("error")
+        """
+        ...
+
+    @abstractmethod
+    def inspect_err(self, f: Callable[[E], None]) -> "Result[T, E]":
+        """Inspect error value for debugging without modifying the Result.
+
+        If this is Err, applies the function to the wrapped error for side effects
+        (such as logging or printing) and returns self unchanged. If this is Ok,
+        returns self unchanged without calling the function.
+
+        This is a pure debugging tool - the callable cannot modify the Result.
+        Any exception raised in the callable will propagate.
+
+        Parameters:
+            f: Function that takes the error value and performs side effects
+
+        Returns:
+            Result[T, E]: Returns self unchanged
+
+        Example:
+            >>> result = Err(ValueError("Invalid"))
+            >>> result.inspect_err(lambda e: print(f"Error: {e}"))
+            # Prints "Error: Invalid", returns Err(ValueError("Invalid"))
+
+            >>> result = Ok(42)
+            >>> result.inspect_err(lambda e: print(f"Error: {e}"))
+            # Prints nothing, returns Ok(42)
+        """
+        ...
+
+    @abstractmethod
+    def context(self, msg: str) -> "Result[T, E]":
+        """Push context message to error chain (eager evaluation).
+
+        If this is Err, pushes the context message to the chain and returns
+        a new Err with the message added to the context chain. If this is Ok,
+        returns self unchanged.
+
+        Context messages are accumulated in LIFO (Last In, First Out) order,
+        matching the Rust anyhow behavior. The most recent context message
+        appears first when the error is displayed.
+
+        Parameters:
+            msg: Context message to push onto the error chain
+
+        Returns:
+            Result[T, E]: New Err with context pushed (LIFO order), or same Ok
+
+        Example:
+            >>> result = Err(ValueError("Invalid input"))
+            >>> result = result.context("validating user age")
+            >>> result = result.context("processing user data")
+            # Context chain: ("processing user data", "validating user age")
+
+            >>> result = Ok(42)
+            >>> result.context("some message")
+            # Returns Ok(42) unchanged
+        """
+        ...
+
+    @abstractmethod
+    def with_context(self, f: Callable[[], str]) -> "Result[T, E]":
+        """Push lazy context message to error chain (delayed evaluation).
+
+        If this is Err, calls the function to generate a context message,
+        then pushes it to the chain and returns a new Err. If this is Ok,
+        returns self unchanged without calling the function.
+
+        Lazy evaluation allows context generation to depend on runtime values
+        (e.g., timestamps, environment variables) without overhead for Ok cases.
+
+        Parameters:
+            f: Callable that generates the context message string
+
+        Returns:
+            Result[T, E]: New Err with lazy context pushed (LIFO order), or same Ok
+
+        Raises:
+            Any exception raised in the callable will propagate
+
+        Example:
+            >>> from datetime import datetime
+            >>> result = Err(ValueError("Failed"))
+            >>> result = result.with_context(lambda: f"Error at {datetime.now()}")
+            # Context generated and pushed to chain
+
+            >>> result = Ok(42)
+            >>> result.with_context(lambda: expensive_context_generation())
+            # Returns Ok(42), function not called (no overhead)
+        """
+        ...
