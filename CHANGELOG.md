@@ -5,6 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [0.3.0] - 2026-01-25
+
+### Added
+
+**AsyncResult: Async/Await Support** — New `AsyncResult[T, E]` type for non-blocking workflows
+- `AsyncResult` as `Awaitable[Result[T, E]]` wrapper for seamless async chaining
+- `__await__()` and `resolve()` methods for awaitable operations
+- Async combinators: `map_async()`, `map_err_async()`, `and_then_async()`
+- Async inspection: `inspect_async()`, `inspect_err_async()`
+- `unwrap_async()` with LIFO context chain in UnwrapError
+- Context preservation via `context()` and `with_context()` across await boundaries
+- Factory methods: `from_result()`, `from_awaitable()` for async/sync interoperability
+- Full type support with mypy --strict compliance
+
+**Async/Sync Interoperability** — Seamless integration between workflows
+- Mix sync Results with async operations using `asyncio.to_thread()`
+- Chain across sync/async boundaries with error type accumulation
+- LIFO context stack preserved through await boundaries
+
+**Comprehensive Async Testing** — 35+ new tests covering async scenarios
+- Unit tests for AsyncResult core (map_async, and_then_async, unwrap_async, etc.)
+- Async/sync interoperability tests with mixed handler chains
+- Integration tests with realistic async pipelines (fetch → validate → persist)
+- All tests use pytest-asyncio with proper marker support
+
+### Changed
+
+- Test count updated from 166 to 187 (35+ new async tests)
+- Updated README with AsyncResult usage examples and async test categories
+- Dev dependencies: Added `pytest-asyncio>=0.24.0`
+
+### Fixed
+
+- AsyncResult resolver uses task caching to support multiple awaits (no "cannot reuse coroutine" errors)
+
+### Backward Compatibility
+
+✅ **Full backward compatibility maintained** — v0.2.0 code requires no changes
+- All sync Result methods unchanged
+- Async operations purely additive (new AsyncResult type)
+- No breaking changes to existing APIs
+
+---
+
+## [0.2.0] - 2026-01-20
+
+### Added
+
+**Context Chain (LIFO)** — Rust anyhow-style error context tracking
+- `context(msg: str) -> Result[T, E]` for manual context annotation
+- `with_context(f: Callable[[], str]) -> Result[T, E]` for lazy evaluation
+- LIFO ordering in UnwrapError messages for rich diagnostics
+
+**Debug Tools** — Non-intrusive inspection utilities
+- `inspect(f: Callable[[T], None]) -> Result[T, E]` for success side effects
+- `inspect_err(f: Callable[[E], None]) -> Result[T, E]` for error side effects
+- Zero-cost abstraction (no performance impact)
+
+**Comprehensive Test Suite** — 166 tests covering core and advanced scenarios
+- Core Result functionality (Ok, Err, unwrap)
+- Functional chains (map, map_err, and_then)
+- Context chain behavior (LIFO, immutability)
+- Integration scenarios with real-world patterns
+
+### Changed
+
+- `UnwrapError` now includes context chain in formatted message
+- Enhanced API documentation with real-world examples
+
+---
+
 ## [0.1.0] - 2026-01-23
 
 ### Initial Release 🎉

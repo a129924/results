@@ -23,15 +23,17 @@ Exports:
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from results.core.base import Result
 from results.exceptions import UnwrapError
+from results.impl.async_ import AsyncResult
 from results.impl.sync import Err, Ok
 
 __all__ = [
     "Result",
     "Ok",
     "Err",
+    "AsyncResult",
     "UnwrapError",
 ]

@@ -1,238 +1,231 @@
-# API Stability & Versioning Policy
+# Stability & API Commitment
 
-This document outlines the stability guarantees and versioning strategy for the `results` library.
+This document outlines the stability guarantees and commitment levels for different parts of the `results` package.
 
-## Overview
+## Versioning
 
-The `results` library follows **Semantic Versioning** (SemVer) with explicit API stability tracking:
+This project follows **Semantic Versioning 2.0.0**:
 
-- **MAJOR** (v0 → v1): Significant changes, possible breaking changes
-- **MINOR** (v0.x → v0.y): New features, backward compatible
-- **PATCH** (v0.x.y → v0.x.z): Bug fixes, backward compatible
+- **MAJOR** version when API changes are incompatible
+- **MINOR** version when new features are added (backward-compatible)
+- **PATCH** version when bug fixes are released (backward-compatible)
 
----
-
-## v0.1.0 - Stable APIs ✅
-
-### Tier 1: Core Contract (Guaranteed Stable)
-
-These are foundational and will NOT change before v1.0:
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `Result[T, E]` ABC | ✅ STABLE | Core abstraction - never breaking |
-| `Ok[T]` | ✅ STABLE | Success variant implementation |
-| `Err[E]` | ✅ STABLE | Error variant implementation |
-| `is_ok()` | ✅ STABLE | Boolean check - signature locked |
-| `is_err()` | ✅ STABLE | Boolean check - signature locked |
-| `ok()` | ✅ STABLE | Success extractor - signature locked |
-| `err()` | ✅ STABLE | Error extractor - signature locked |
-| `map()` | ✅ STABLE | Transformation - signature locked |
-| `map_err()` | ✅ STABLE | Error transformation - signature locked |
-| `and_then()` | ✅ STABLE | Chaining - signature locked |
-| `unwrap()` | ✅ STABLE | Extraction with exception - signature locked |
-
-**Stability Guarantee:**
-```python
-# This WILL work in v0.2.0, v0.3.0, ... v1.0
-from results import Ok, Err, Result
-
-result: Result[int, str] = Ok(42)
-assert result.is_ok()
-assert result.ok() == 42
-value = result.map(lambda x: x * 2).unwrap()
-```
-
-### Tier 2: Exception System (Guaranteed Stable)
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `ResultError` | ✅ STABLE | Base framework exception |
-| `UnwrapError` | ✅ STABLE | unwrap() failure exception |
-| `BaseError` | ✅ STABLE | Business exception helper ABC |
-
-**Stability Guarantee:**
-```python
-# Error handling WILL work unchanged
-try:
-    result.unwrap()
-except UnwrapError as e:
-    print(e.message)
-    print(e.original_error)
-```
-
-### Tier 3: Type System (Guaranteed Stable)
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `E` TypeVar (unconstrained) | ✅ STABLE | Supports any error type |
-| Type annotations (PEP 561) | ✅ STABLE | Full mypy support |
-| Python 3.10+ syntax | ✅ STABLE | PEP 604 (`\|` operator) |
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
-## v0.2.0 - Planned Additions (Will NOT Break v0.1.0 APIs)
+## API Stability Tiers
 
-### New Experimental APIs
+### 🟢 Tier 1: Stable (Public API)
 
-| Feature | Status | Planned |
-|---------|--------|---------|
-| `with_context(msg: str)` | 🔄 PLANNED | Add execution context to errors |
-| `inspect()` | 🔄 PLANNED | Debug utility |
-| Error chaining | 🔄 PLANNED | `anyhow`-style context |
+**Status:** Committed to long-term stability
 
-**Important:** These will be additive - no breaking changes to v0.1.0 APIs.
+Core Result type system:
 
-```python
-# v0.2.0 - NEW, but v0.1.0 code still works
-result = Ok(42).with_context("parsing user data")
+| API | Version Added | Status |
+|-----|----------------|--------|
+| `Result[T, E]` (ABC) | v0.1.0 | ✅ Stable |
+| `Ok[T]` | v0.1.0 | ✅ Stable |
+| `Err[E]` | v0.1.0 | ✅ Stable |
+| `Result.is_ok()` | v0.1.0 | ✅ Stable |
+| `Result.is_err()` | v0.1.0 | ✅ Stable |
+| `Result.ok()` | v0.1.0 | ✅ Stable |
+| `Result.err()` | v0.1.0 | ✅ Stable |
+| `Result.unwrap()` | v0.1.0 | ✅ Stable |
+| `Result.map()` | v0.1.0 | ✅ Stable |
+| `Result.map_err()` | v0.1.0 | ✅ Stable |
+| `Result.and_then()` | v0.1.0 | ✅ Stable |
 
-# v0.1.0 code - STILL WORKS UNCHANGED
-result = Ok(42).map(lambda x: x * 2)
-```
+**Commitment:**
+- No breaking changes to these methods in future releases
+- Only additive changes (new parameters, new methods, new variants)
+- Full backward compatibility across major versions
+
+### 🟡 Tier 2: Stable (Released Functional Enhancement)
+
+**Status:** Committed to stability, released as part of v0.2.0+
+
+Debug and context chain tools:
+
+| API | Version Added | Status |
+|-----|----------------|--------|
+| `Result.inspect()` | v0.2.0 | ✅ Stable |
+| `Result.inspect_err()` | v0.2.0 | ✅ Stable |
+| `Result.context()` | v0.2.0 | ✅ Stable |
+| `Result.with_context()` | v0.2.0 | ✅ Stable |
+| `Err._context_chain` | v0.2.0 | ✅ Stable (Private) |
+
+**Commitment:**
+- Considered stable and suitable for production use
+- LIFO context chain behavior is guaranteed
+- No breaking changes planned
+
+**Async/Await Support** (v0.3.0):
+
+| API | Version Added | Status |
+|-----|----------------|--------|
+| `AsyncResult[T, E]` | v0.3.0 | ✅ Stable |
+| `AsyncResult.__await__()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.resolve()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.map_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.map_err_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.and_then_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.inspect_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.inspect_err_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.unwrap_async()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.context()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.with_context()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.from_result()` | v0.3.0 | ✅ Stable |
+| `AsyncResult.from_awaitable()` | v0.3.0 | ✅ Stable |
+
+**Commitment:**
+- Async operations fully stable and production-ready
+- LIFO context chain behavior preserved across await boundaries
+- Seamless async/sync interoperability guaranteed
+- Full type safety with mypy --strict
+- No breaking changes planned
 
 ---
 
-## v0.3.0 - Async Support (Separate Module)
+## Exceptions & Error Types
 
-| Feature | Status | Type |
-|---------|--------|------|
-| `AsyncResult[T, E]` | 🔄 PLANNED | New module |
-| `async_ok()`, `async_err()` | 🔄 PLANNED | New functions |
-
-**Important:** Async features will be in `results.async_` - separate namespace, no impact on sync APIs.
-
-```python
-# v0.3.0 - NEW async module (sync v0.1.0 code unaffected)
-from results.async_ import AsyncResult
-
-async def process() -> AsyncResult[int, str]:
-    return AsyncResult.Ok(42)
-```
+| Exception | Version | Status | Guarantees |
+|-----------|---------|--------|-----------|
+| `UnwrapError` | v0.1.0 | ✅ Stable | Raised on `unwrap()` of Err |
+| `ResultError` | v0.1.0 | ✅ Stable | Base exception class |
+| `BaseError` | v0.1.0 | ✅ Stable | Optional base for business errors |
 
 ---
 
-## Backward Compatibility Policy
+## Implementation Guarantees
 
-### What We Guarantee
+### Performance
 
-✅ **Will NOT change before v1.0:**
-- Method signatures (parameters, return types)
-- Exception types and hierarchy
-- Type inference behavior
-- Module structure (import paths)
+- **Ok operations:** O(1) with no allocations beyond frozen dataclass
+- **Err operations:** O(1) for operations, O(n) for context chain display only on `unwrap()`
+- **Context chain:** Immutable tuple, no hidden allocations in chain traversal
 
-### What May Change
+### Thread Safety
 
-⚠️ **Before v1.0, these might change:**
-- Internal implementation details (prefixed with `_`)
-- Docstring formatting (not functionality)
-- Performance characteristics
-- Experimental APIs (clearly marked 🔄 PLANNED)
+- All types use frozen dataclasses (immutable)
+- No global state or shared resources
+- Safe to share across threads
+- Safe to use in async contexts
 
-### What We Will Never Change
+### Backward Compatibility
 
-🔒 **Locked for life:**
-- Core 8 methods: `is_ok`, `is_err`, `ok`, `err`, `map`, `map_err`, `and_then`, `unwrap`
-- Result ABC contract
-- Python 3.10+ requirement
-- Type safety guarantees
+- v0.1.0 code runs unchanged on v0.2.0+
+- No breaking changes to existing APIs
+- Private attributes (prefixed with `_`) are not part of public API and may change
 
 ---
 
-## Deprecation Process
+---
 
-When we need to remove/change something (post v1.0):
+## Compatibility Matrix
 
-1. **Announce** — Add deprecation warning to logs
-2. **Transition** — Provide migration guide in CHANGELOG
-3. **Wait** — Allow 2 minor versions for users to update
-4. **Remove** — Delete in MAJOR version
+| Feature | v0.1.0 | v0.2.0 | v0.3.0+ |
+|---------|--------|--------|---------|
+| Core Result (Ok/Err) | ✅ | ✅ | ✅ |
+| map/map_err/and_then | ✅ | ✅ | ✅ |
+| inspect/inspect_err | ❌ | ✅ | ✅ |
+| context/with_context | ❌ | ✅ | ✅ |
+| AsyncResult | ❌ | ❌ | ✅ |
+| Async chaining | ❌ | ❌ | ✅ |
+| Python 3.10+ | ✅ | ✅ | ✅ |
+| mypy --strict | ✅ | ✅ | ✅ |
+
+---
+
+## Future API Plans
+
+### 🔵 Tier 3: Planned (Not Yet Released)
+
+Features planned for future releases:
+
+| Feature | Planned Version | Purpose |
+|---------|-----------------|---------|
+| `AsyncResult[T, E]` | v0.3.0 | Async/await support |
+| Context managers | v0.3.0 | Resource management |
+| Logging integration | v0.4.0 | Built-in diagnostic logging |
+| Performance tools | v0.5.0 | Benchmarking utilities |
+
+**Note:** Planned features may be adjusted or postponed based on user feedback and priorities.
+
+---
+
+## Support Policy
+
+### Supported Versions
+
+| Version | Released | End of Support | Status |
+|---------|----------|-----------------|--------|
+| 0.2.x   | 2026-01-24 | TBD | Current |
+| 0.1.x   | 2026-01-23 | TBD | Maintenance |
+| 0.0.x   | (none)   | N/A | Not released |
+
+**Note:** Exact end-of-support dates will be determined based on adoption and release cadence.
+
+### Security
+
+- No external dependencies (zero supply chain risk)
+- Frozen dataclasses prevent mutable state exploits
+- No unsafe type operations
+
+---
+
+## Deprecation Policy
+
+When APIs must change:
+
+1. **Deprecation Warning:** Add warning in current version (minimum 1 minor version)
+2. **Documentation:** Update docs with migration guide
+3. **Removal:** Remove in next MAJOR version
 
 Example:
-```python
-# v1.1.0 - Hypothetical deprecation
-import warnings
-
-def old_method(self):
-    warnings.warn(
-        "old_method is deprecated, use new_method instead",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    return self.new_method()
-```
+- v1.0.0: Introduce `new_method()`, deprecate `old_method()`
+- v1.x.x: Both work, warning on `old_method()` use
+- v2.0.0: Remove `old_method()`
 
 ---
 
-## Version Commitment Matrix
+## Reporting Issues
 
-| Version | Guarantee | Breaking Changes | New Stable APIs |
-|---------|-----------|------------------|-----------------|
-| v0.1.x  | ✅ Stable | ❌ None | ❌ None (patch only) |
-| v0.2.0  | ✅ Compatible | ❌ None | ✅ Experimental features (additive) |
-| v0.3.0  | ✅ Compatible | ❌ None | ✅ Async module |
-| v1.0.0  | 🔒 Locked | ❌ None | ⚠️ TBD (post-v1 policy) |
-| v2.0.0+ | 🔒 Locked | ✅ Allowed | 📋 With deprecation notice |
+If you discover stability issues or breaking changes:
+
+1. Create a GitHub issue with version and reproduction steps
+2. Label as `bug` or `breaking-change`
+3. Include minimal reproducible example
 
 ---
 
-## For Users: API Stability Checklist
+## FAQ
 
-Use this to verify your code is stable:
+**Q: Can I rely on v0.x APIs for production?**
 
-```python
-# ✅ SAFE - All v0.1.0 core APIs
-from results import Ok, Err, Result
-result = Ok(42).map(lambda x: x * 2).and_then(validate)
+A: Yes. While on 0.x versions, Tier 1 & 2 APIs are stable and supported. The project uses semantic versioning; breaking changes require MAJOR version bump.
 
-# ⚠️ EXPERIMENTAL - May change in v0.2.0
-result.with_context("user context")  # Not yet in v0.1.0
+**Q: Will my v0.1.0 code work on v0.2.0?**
 
-# ❌ NEVER USE DIRECTLY - Internal APIs
-result._value  # Private! Use result.ok() instead
-```
+A: Yes, 100% backward compatible. You can upgrade freely.
 
----
+**Q: What about v0.3.0 with AsyncResult?**
 
-## For Contributors: API Changes
+A: Planned for v0.3.0, will be purely additive. Existing sync APIs unchanged.
 
-### Before Adding to Stable Tier
+**Q: Is `_context_chain` private?**
 
-1. ✅ Does it fit the core philosophy?
-2. ✅ Is the signature intuitive?
-3. ✅ Can it be tested comprehensively?
-4. ✅ Is it documented with examples?
-5. ✅ Would removing it break existing code?
-
-### To Mark Something as Stable
-
-1. Add test coverage ≥ 95%
-2. Include in main README examples
-3. Document in docstring with examples
-4. Add to this STABILITY.md file
-5. Mention in CHANGELOG as "Stabilized"
+A: Yes. Use public API (`context()`, `with_context()`) instead. Private fields may change.
 
 ---
 
-## Questions & Feedback
+## References
 
-If you have concerns about API stability:
-1. Check this file first
-2. Review CHANGELOG.md for version changes
-3. Open an issue for clarification
-
-## Version History
-
-| Version | Date | Stability Status |
-|---------|------|------------------|
-| v0.1.0  | 2026-01-23 | 🟢 Core APIs Stable |
-| v0.2.0  | TBD  | 🟡 Core Stable + Experimental |
-| v0.3.0  | TBD  | 🟢 Core + Async Stable |
-| v1.0.0  | TBD  | 🔒 All Locked |
+- [CHANGELOG.md](CHANGELOG.md) — Version history and feature additions
+- [README.md](README.md) — Quick start and examples
+- [pyproject.toml](pyproject.toml) — Python version and dependency constraints
 
 ---
 
-**Last Updated:** 2026-01-24
-**Maintained By:** Andrew
-**SemVer Version:** 2.0.0 compatible
+**Last Updated:** 2026-01-24  
+**Stability Policy Version:** 1.0
