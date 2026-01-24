@@ -1,4 +1,8 @@
-"""Result 類型系統的非同步實現。
+"""Async Result implementations.
 
-此模組為非同步操作預留。
+This module provides AsyncOk and AsyncErr, which are awaitable variants of the
+synchronous Result type. They enable async/await workflows while maintaining
+LIFO context chain semantics identical to their sync counterparts.
 """
+
+__all__ = ["AsyncOk", "AsyncErr"]
