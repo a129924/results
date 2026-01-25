@@ -172,21 +172,21 @@ class Err(Result[T, E], Generic[T, E]):
             Called unwrap on Err
             string error
         """
-        if isinstance(self._error, Exception):
-            # Format context chain if present
-            if self._context_chain:
-                # LIFO order: newest context first
-                context_str = "\n".join(f"  {ctx}" for ctx in self._context_chain)
-                error_msg = f"{context_str}\n  {str(self._error)}"
-                # Create a new exception with context message, preserve original traceback
-                exc = type(self._error)(error_msg)
+        if not isinstance(self._error, Exception):
+            # Non-Exception: wrap in UnwrapError with context chain
+            raise UnwrapError("Called unwrap on Err", self._error, self._context_chain)
 
-                raise exc from self._error
-            # No context, raise directly
-            raise self._error from self._error
+        # Format context chain if present
+        if self._context_chain:
+            # LIFO order: newest context first
+            context_str = "\n".join(f"  {ctx}" for ctx in self._context_chain)
+            error_msg = f"{context_str}\n  {str(self._error)}"
+            # Create a new exception with context message, preserve original traceback
+            exc = type(self._error)(error_msg)
 
-        # Non-Exception: wrap in UnwrapError
-        raise UnwrapError("Called unwrap on Err", self._error)
+            raise exc from self._error
+        # No context, raise directly
+        raise self._error from self._error
 
     @override
     def map(self, op: Callable[[T], U]) -> Result[U, E]:

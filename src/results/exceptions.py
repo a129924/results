@@ -41,6 +41,7 @@ class UnwrapError(ResultError):
     Attributes:
         message: Description of the unwrap failure
         original_error: The value that was wrapped in the Err (any type)
+        context_chain: LIFO tuple of context messages (newest first)
 
     Example:
         >>> from results import Err, UnwrapError
@@ -50,23 +51,47 @@ class UnwrapError(ResultError):
         ... except UnwrapError as e:
         ...     print(e)  # UnwrapError: Attempted to unwrap an Err value
 
-        >>> result2 = Err("error string")
+        >>> result2 = Err("error string").context("step1")
         >>> try:
         ...     result2.unwrap()
         ... except UnwrapError as e:
-        ...     print(e.original_error)  # "error string"
+        ...     print(e)  # Shows context: step1 above error message
     """
 
-    def __init__(self, message: str, original_error: Any) -> None:
+    def __init__(
+        self,
+        message: str,
+        original_error: Any,
+        context_chain: tuple[str, ...] = (),
+    ) -> None:
         """Initialize UnwrapError with context.
 
         Parameters:
             message: Error message describing the unwrap failure
             original_error: The value originally wrapped in Err (any type)
+            context_chain: LIFO tuple of context messages (newest first)
         """
         self.message = message
         self.original_error = original_error
+        self.context_chain = context_chain
         super().__init__(message)
+
+    def __str__(self) -> str:
+        """Format error message with context chain if present.
+
+        Returns:
+            Formatted error string with context (if any) followed by message
+        """
+        if self.context_chain:
+            # LIFO order: newest context first
+            context_str = "\n".join(f"  {ctx}" for ctx in self.context_chain)
+            original_error_str = (
+                f"  {self.original_error}"
+                if not isinstance(self.original_error, str)
+                else f"  {self.original_error}"
+            )
+            return f"{context_str}\n{original_error_str}"
+        return self.message
 
 
 @dataclass(frozen=True)

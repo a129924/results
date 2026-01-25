@@ -237,3 +237,74 @@ class TestContextChain:
         assert result._context_chain[1] == "context-98"
         assert result._context_chain[-1] == "context-0"  # Oldest
         assert len(result._context_chain) == 100
+
+    def test_unwrap_non_exception_string_with_context(self) -> None:
+        """Test that unwrap() on string error with context displays context."""
+        result = Err("string error").context("step1").context("step2")
+
+        with pytest.raises(UnwrapError) as exc_info:
+            result.unwrap()
+
+        exc = exc_info.value
+        # Context chain should be preserved in UnwrapError
+        assert exc.context_chain == ("step2", "step1")
+        assert exc.original_error == "string error"
+        # __str__ should format with context
+        assert "step2" in str(exc)
+        assert "step1" in str(exc)
+        assert "string error" in str(exc)
+
+    def test_unwrap_non_exception_int_with_context(self) -> None:
+        """Test that unwrap() on int error with context displays context."""
+        result = Err(404).context("HTTP error").context("network call")
+
+        with pytest.raises(UnwrapError) as exc_info:
+            result.unwrap()
+
+        exc = exc_info.value
+        assert exc.context_chain == ("network call", "HTTP error")
+        assert exc.original_error == 404
+        assert "network call" in str(exc)
+        assert "HTTP error" in str(exc)
+        assert "404" in str(exc)
+
+    def test_unwrap_non_exception_dict_with_context(self) -> None:
+        """Test that unwrap() on dict error with context displays context."""
+        error_dict = {"code": "ERR_TIMEOUT", "ms": 5000}
+        result = Err(error_dict).context("database query timeout")
+
+        with pytest.raises(UnwrapError) as exc_info:
+            result.unwrap()
+
+        exc = exc_info.value
+        assert exc.context_chain == ("database query timeout",)
+        assert exc.original_error == error_dict
+        assert "database query timeout" in str(exc)
+        assert "ERR_TIMEOUT" in str(exc)
+
+    def test_unwrap_non_exception_without_context(self) -> None:
+        """Test that unwrap() on non-exception without context works."""
+        result = Err("error")
+
+        with pytest.raises(UnwrapError) as exc_info:
+            result.unwrap()
+
+        exc = exc_info.value
+        assert exc.context_chain == ()
+        assert exc.original_error == "error"
+        # Without context, __str__ returns just the message
+        assert str(exc) == "Called unwrap on Err"
+
+    def test_unwrap_exception_preserves_original_context_behavior(self) -> None:
+        """Test that Exception types still use original context behavior."""
+        error = ValueError("original message")
+        result = Err(error).context("step1").context("step2")
+
+        with pytest.raises(ValueError) as exc_info:
+            result.unwrap()
+
+        # Exception behavior unchanged: context in error message
+        exc_str = str(exc_info.value)
+        assert "step2" in exc_str
+        assert "step1" in exc_str
+        assert "original message" in exc_str
