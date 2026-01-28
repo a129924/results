@@ -188,6 +188,222 @@ else:
     error = result.err()
     print(f"Registration failed: {error}")
 ```
+
+## ✅ Recommended Patterns
+
+### Functional Chains (Recommended for Most Cases)
+
+Use method chaining with `map()`, `map_err()`, and `and_then()` for clean, composable code:
+
+```python
+# ✅ RECOMMENDED: Functional style
+def process_user_age(age: int) -> Result[str, str]:
+    """Process user age with validation."""
+    return (
+        Ok(age)
+        .and_then(lambda a: Ok(a) if a >= 18 else Err("Underage"))
+        .map(lambda a: f"Adult age: {a}")
+        .map_err(lambda e: f"Age validation failed: {e}")
+    )
+
+result = process_user_age(21)
+assert result.ok() == "Adult age: 21"
+```
+
+**Benefits:**
+- ✅ Clear error propagation (short-circuits on first Err)
+- ✅ No intermediate variable pollution
+- ✅ Composable and reusable
+- ✅ Type-safe with mypy --strict
+
+### Imperative Checks (For Complex Logic)
+
+Use `is_ok()`, `is_err()`, `ok()`, `err()` when you need branching logic:
+
+```python
+# ✅ ACCEPTABLE: Imperative style for complex flows
+result = divide(10, 2)
+
+if result.is_err():
+    # Handle errors first (fail-fast)
+    logger.error(f"Division failed: {result.err()}")
+    raise RuntimeError(f"Critical: {result.err()}")
+
+# Proceed with success case
+value = result.ok()
+print(f"Result: {value * 2}")
+```
+
+**When to use:**
+- Complex error handling with different recovery strategies
+- Logging and monitoring specific error types
+- Early termination based on multiple conditions
+
+### Combining Approaches
+
+Mix functional and imperative styles for readability:
+
+```python
+# ✅ HYBRID: Combine styles appropriately
+result = (
+    validate_input(user_input)
+    .and_then(transform_data)
+)
+
+# Inspect the result
+if result.is_err():
+    error = result.err()
+    if isinstance(error, ValidationError):
+        return Err(f"Invalid input: {error}")
+    else:
+        raise UnexpectedError(error)
+
+# Use with success value
+data = result.ok()
+return Ok({"processed": data})
+```
+
+## 🎯 Pattern Matching with match/case (Python 3.10+)
+
+Python 3.10 introduces structural pattern matching via `match`/`case`, perfect for Result types:
+
+### Basic Pattern Matching
+
+```python
+from results import Ok, Err, Result
+
+def fetch_user(user_id: int) -> Result[dict, str]:
+    """Fetch user by ID."""
+    if user_id > 0:
+        return Ok({"id": user_id, "name": "Alice"})
+    return Err(f"Invalid ID: {user_id}")
+
+# ✅ RECOMMENDED: Pattern matching for Result dispatch
+result = fetch_user(123)
+match result:
+    case Ok(user):
+        print(f"Found user: {user['name']}")
+    case Err(error):
+        print(f"Error: {error}")
+```
+
+### Comparison: if/else vs match/case
+
+```python
+# ❌ OLD: Imperative if/else (still works)
+result = fetch_user(123)
+if result.is_ok():
+    user = result.ok()
+    print(f"Found: {user['name']}")
+else:
+    error = result.err()
+    print(f"Error: {error}")
+
+# ✅ MODERN: Structural pattern matching (cleaner)
+result = fetch_user(123)
+match result:
+    case Ok(user):
+        print(f"Found: {user['name']}")
+    case Err(error):
+        print(f"Error: {error}")
+```
+
+### Complex Patterns with Type Guards
+
+```python
+from results import Ok, Err
+from dataclasses import dataclass
+
+@dataclass
+class UserError:
+    """Business error type."""
+    code: str
+    message: str
+
+def validate_and_fetch(user_id: int) -> Result[dict, UserError | ValueError]:
+    """Return different error types."""
+    if user_id <= 0:
+        return Err(ValueError("ID must be positive"))
+    if user_id == 666:
+        return Err(UserError("FORBIDDEN", "User 666 is restricted"))
+    return Ok({"id": user_id, "name": "Alice"})
+
+# ✅ Pattern match on error type
+result = validate_and_fetch(666)
+match result:
+    case Ok(user):
+        print(f"Success: {user}")
+    case Err(UserError(code, message)):  # Type-specific pattern
+        print(f"Business error [{code}]: {message}")
+    case Err(ValueError(msg)):  # Exception type pattern
+        print(f"Validation error: {msg}")
+    case _:  # Catch-all
+        print("Unexpected error")
+```
+
+### Real-World API Response Handler
+
+```python
+from results import Ok, Err, Result
+from dataclasses import dataclass
+
+@dataclass
+class APIResponse:
+    status: int
+    data: dict | None = None
+    error: str | None = None
+
+def handle_api_response(response: APIResponse) -> Result[dict, str]:
+    """Transform API response to Result."""
+    match response:
+        case APIResponse(status=200, data=data) if data is not None:
+            return Ok(data)
+        case APIResponse(status=404, _):
+            return Err("Resource not found")
+        case APIResponse(status=500, error=error):
+            return Err(f"Server error: {error}")
+        case APIResponse(status=code, _):
+            return Err(f"Unexpected status: {code}")
+
+# Usage with pattern matching
+result = handle_api_response(APIResponse(200, {"user": "Alice"}))
+match result:
+    case Ok(data):
+        print(f"Data: {data}")
+    case Err(message):
+        print(f"Failed: {message}")
+```
+
+### Chaining Results with Pattern Matching
+
+```python
+def process_and_fetch(user_id: int) -> Result[str, str]:
+    """Chain multiple operations with pattern matching."""
+    result = validate_and_fetch(user_id)
+    
+    match result:
+        case Ok(user):
+            # Continue with success
+            enriched = enrich_user_data(user)
+            return Ok(f"Processed: {enriched}")
+        case Err(error):
+            # Short-circuit with error
+            return Err(f"Processing failed: {error}")
+
+# Or use map/and_then for the same effect (both valid)
+result = (
+    validate_and_fetch(user_id)
+    .and_then(enrich_user_data)
+    .map(lambda u: f"Processed: {u}")
+)
+```
+
+**Pattern Matching Guidelines:**
+- ✅ Use `match/case` for explicit Result dispatch at API boundaries
+- ✅ Use `map/and_then` for chaining transformations
+- ✅ Combine both: use `match` for final result handling, `map` for intermediate transforms
+- ✅ Pattern matching excels at type-based routing (different error types)
+
 ## 🔍 Debug Tools: Inspect and Context Chain
 
 ### Debug with `inspect()` and `inspect_err()`
