@@ -27,8 +27,7 @@ __version__ = "0.3.0"
 
 from results.core.base import Result
 from results.exceptions import UnwrapError
-from results.impl.async_ import AsyncResult
-from results.impl.sync import Err, Ok
+from results.result import AsyncResult, Err, Ok
 
 __all__ = [
     "Result",
