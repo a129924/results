@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2026-02-06
+
+### Changed
+
+**Architecture Restructuring (Phase 1)** — Reorganized for scalable monad ecosystem
+- Directory structure: `impl/{sync,async_}` → `result/{sync,asyncio}`
+- Functional-priority grouping: Each monad type (Result, Maybe, Either) in separate directory
+- Aggregation modules: Proper `result/__init__.py` for clean public imports
+- Test structure: `tests/async_` → `tests/asyncio` for consistency
+- Removed legacy `impl/` directory (fully migrated to `result/`)
+- Removed empty `tests/unit/` directory (tests now in `sync/asyncio/unit/`)
+
+### Added
+
+- `MIGRATION_GUIDE.md` — Comprehensive guide for v0.3.1 transition
+- `common/` directory — Foundation for Phase 2 shared utilities
+- Improved code organization supporting future Maybe and Either implementations
+
+### Backward Compatibility
+
+✅ **100% backward compatible** — No API changes, only internal restructuring
+- All public imports unchanged: `from results import Ok, Err, AsyncResult`
+- All 192 tests passing
+- mypy --strict: 0 errors
+- ruff: all checks passing
+
+---
+
 ## [0.3.0] - 2026-01-25
 
 ### Added
@@ -164,6 +192,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Release Date | Status |
 |---------|-------------|--------|
+| 0.3.1   | 2026-02-06  | ✅ Released |
+| 0.3.0   | 2026-01-25  | ✅ Released |
+| 0.2.0   | 2026-01-20  | ✅ Released |
 | 0.1.0   | 2026-01-23  | ✅ Released |
 
 ---
