@@ -173,7 +173,7 @@ class TestNothingOrElse:
             call_count += 1
             return Some(42)
 
-        result = Nothing().or_else(compute_alternative)
+        Nothing().or_else(compute_alternative)
         assert call_count == 1
 
 
@@ -231,7 +231,7 @@ class TestNothingInspect:
             nonlocal call_count
             call_count += 1
 
-        result = Nothing().inspect(count)
+        Nothing().inspect(count)
         assert call_count == 0
 
 

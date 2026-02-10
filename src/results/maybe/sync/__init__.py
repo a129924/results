@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from .maybe import Nothing, Some
+from .nothing import Nothing
+from .some import Some
 
 __all__ = [
     "Some",
