@@ -25,7 +25,7 @@ class TestContextChain:
         result = result.context("step A")
 
         assert result.is_err()
-        assert result._context_chain == ("step A",)
+        assert result._context_chain.messages == ("step A",)
         assert result.err() == "error"
 
     def test_multiple_context_lifo(self) -> None:
@@ -36,13 +36,13 @@ class TestContextChain:
         """
         result = Err("error")
         result = result.context("A")
-        assert result._context_chain == ("A",)
+        assert result._context_chain.messages == ("A",)
 
         result = result.context("B")
-        assert result._context_chain == ("B", "A")
+        assert result._context_chain.messages == ("B", "A")
 
         result = result.context("C")
-        assert result._context_chain == ("C", "B", "A")
+        assert result._context_chain.messages == ("C", "B", "A")
 
     def test_context_preserves_error(self) -> None:
         """Test that context() preserves the original error value."""
@@ -56,13 +56,13 @@ class TestContextChain:
     def test_context_immutable(self) -> None:
         """Test that context() returns new Err, doesn't mutate original."""
         r1 = Err("error").context("A")
-        assert r1._context_chain == ("A",)
+        assert r1._context_chain.messages == ("A",)
 
         r2 = r1.context("B")
-        assert r2._context_chain == ("B", "A")
+        assert r2._context_chain.messages == ("B", "A")
 
         # r1 should not be modified
-        assert r1._context_chain == ("A",)
+        assert r1._context_chain.messages == ("A",)
 
     def test_with_context_returns_result_unchanged(self) -> None:
         """Test that with_context() returns the result unchanged."""
@@ -71,7 +71,7 @@ class TestContextChain:
         # with_context() pushes context to chain
         assert result.is_err()
         assert result.err() == "error"
-        assert result._context_chain == ("new context",)
+        assert result._context_chain.messages == ("new context",)
 
     def test_with_context_lazy_evaluation(self) -> None:
         """Test that with_context() evaluates the callable.
@@ -90,12 +90,15 @@ class TestContextChain:
 
         # Context callable should have been called once
         assert call_count == 1
-        assert result._context_chain == ("evaluated 1 times",)
+        assert result._context_chain.messages == ("evaluated 1 times",)
 
         # Calling again should evaluate again
         result2 = result.with_context(context_provider)
         assert call_count == 2
-        assert result2._context_chain == ("evaluated 2 times", "evaluated 1 times")
+        assert result2._context_chain.messages == (
+            "evaluated 2 times",
+            "evaluated 1 times",
+        )
 
     def test_context_with_none_value(self) -> None:
         """Test context() works with None as error value."""
@@ -104,7 +107,7 @@ class TestContextChain:
 
         assert result.is_err()
         assert result.err() is None
-        assert result._context_chain == ("step",)
+        assert result._context_chain.messages == ("step",)
 
     def test_unwrap_shows_context_chain(self) -> None:
         """Test that unwrap() displays context chain with Exception types."""
@@ -130,7 +133,7 @@ class TestContextChain:
     def test_empty_context_chain_on_new_err(self) -> None:
         """Test that new Err results have empty context chain."""
         result = Err("error")
-        assert result._context_chain == ()
+        assert result._context_chain.messages == ()
 
     def test_context_chain_through_map_err(self) -> None:
         """Test that context chain is preserved through map_err()."""
@@ -142,7 +145,7 @@ class TestContextChain:
 
         assert result.is_err()
         assert isinstance(result.err(), ValueError)
-        assert result._context_chain == ("step 1",)
+        assert result._context_chain.messages == ("step 1",)
 
     def test_context_chain_preserved_through_and_then_error(self) -> None:
         """Test context preserved when and_then short-circuits on error."""
@@ -152,7 +155,7 @@ class TestContextChain:
 
         assert result.is_err()
         assert result.err() == "error"
-        assert result._context_chain == ("step A",)
+        assert result._context_chain.messages == ("step A",)
 
     def test_context_on_ok_returns_ok_unchanged(self) -> None:
         """Test that context() on Ok result is a no-op (passthrough)."""
@@ -184,9 +187,9 @@ class TestContextChain:
         chain.append(r3._context_chain)
 
         # Each should be independent
-        assert chain[0] == ()
-        assert chain[1] == ("A",)
-        assert chain[2] == ("B", "A")
+        assert chain[0].messages == ()
+        assert chain[1].messages == ("A",)
+        assert chain[2].messages == ("B", "A")
 
     def test_context_chain_with_chained_operations(self) -> None:
         """Test context chain through complex chained operations."""
@@ -198,14 +201,14 @@ class TestContextChain:
 
         assert result.is_err()
         assert "transformed:" in result.err()
-        assert result._context_chain == ("operation",)
+        assert result._context_chain.messages == ("operation",)
 
     def test_context_with_special_characters(self) -> None:
         """Test context() with special characters in message."""
         msg = "Failed at line 42\n\tFile: /path/to/file.py\n\tError: <type Error>"
         result = Err("error").context(msg)
 
-        assert result._context_chain == (msg,)
+        assert result._context_chain.messages == (msg,)
         assert result.err() == "error"
 
     def test_backward_compatibility_v0_1_operations(self) -> None:
@@ -224,7 +227,7 @@ class TestContextChain:
     def test_context_empty_string(self) -> None:
         """Test context() with empty string."""
         result = Err("error").context("")
-        assert result._context_chain == ("",)
+        assert result._context_chain.messages == ("",)
 
     def test_large_context_chain(self) -> None:
         """Test with a large number of context messages (stress test)."""
@@ -233,9 +236,9 @@ class TestContextChain:
             result = result.context(f"context-{i}")
 
         # Should maintain LIFO order
-        assert result._context_chain[0] == "context-99"  # Most recent
-        assert result._context_chain[1] == "context-98"
-        assert result._context_chain[-1] == "context-0"  # Oldest
+        assert result._context_chain.messages[0] == "context-99"  # Most recent
+        assert result._context_chain.messages[1] == "context-98"
+        assert result._context_chain.messages[-1] == "context-0"  # Oldest
         assert len(result._context_chain) == 100
 
     def test_unwrap_non_exception_string_with_context(self) -> None:

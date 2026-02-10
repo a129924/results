@@ -267,7 +267,7 @@ class TestInspectIntegration:
         result = Err("base").context("step 1").context("step 2").inspect_err(inspector)
 
         assert inspected == "base"
-        assert result._context_chain == ("step 2", "step 1")
+        assert result._context_chain.messages == ("step 2", "step 1")
 
     def test_inspect_with_side_effects(self) -> None:
         """Test inspect() with side effects (file writes, etc.)."""

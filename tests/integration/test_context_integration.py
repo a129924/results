@@ -7,7 +7,16 @@ applications.
 All tests follow v0.1.0 backward compatibility requirements.
 """
 
+from typing import TypedDict
+
 from results import Err, Ok, Result
+
+
+class User(TypedDict):
+    """Example user data structure."""
+
+    email: str
+    password: str
 
 
 class TestContextIntegration:
@@ -15,7 +24,7 @@ class TestContextIntegration:
 
     def test_user_registration_flow(self) -> None:
         """Test context chain through a user registration flow."""
-        debug_log = []
+        debug_log: list[str] = []
 
         def validate_email(email: str) -> Result[str, str]:
             if "@" not in email:
@@ -27,27 +36,34 @@ class TestContextIntegration:
                 return Err("password too short").context("password validation")
             return Ok(password)
 
-        def register_user(email: str, password: str) -> Result[dict, str]:
+        def register_user(email: str, password: str) -> Result[User, str]:
             return (
                 validate_email(email)
                 .inspect(lambda e: debug_log.append(f"email validated: {e}"))
                 .and_then(
                     lambda e: validate_password(password)
                     .inspect(lambda p: debug_log.append(f"password validated: {p}"))
-                    .map(lambda p: {"email": e, "password": p})
+                    .map(lambda p: User(email=e, password=p))
                 )
             )
 
         # Successful case
         result = register_user("user@example.com", "securepass123")
         assert result.is_ok()
-        assert result.ok()["email"] == "user@example.com"
+
+        user = result.ok()
+        assert user is not None
+        assert user["email"] == "user@example.com"
 
         # Failed email case
         result = register_user("invalid-email", "securepass123")
         assert result.is_err()
-        assert "invalid email format" in result.err()
-        assert result._context_chain == ("email validation",)
+        register_err = result.err()
+        assert register_err is not None
+        assert "invalid email format" in register_err
+        assert isinstance(result, Err) and result._context_chain.messages == (
+            "email validation",
+        )
 
     def test_data_pipeline_with_context(self) -> None:
         """Test context chain through a data processing pipeline."""
@@ -66,7 +82,7 @@ class TestContextIntegration:
         def process_pipeline(
             inputs: list[str],
         ) -> Result[list[int], str]:
-            results = []
+            results: list[int] = []
             for input_val in inputs:
                 result = parse_int(input_val).and_then(validate_range)
                 if result.is_err():
@@ -82,7 +98,7 @@ class TestContextIntegration:
         result = process_pipeline(["1", "invalid", "100"])
         assert result.is_err()
         assert "not a number" in result.err()
-        assert result._context_chain == ("parsing",)
+        assert result._context_chain.messages == ("parsing",)
 
     def test_nested_and_then_with_context(self) -> None:
         """Test deeply nested and_then operations with context."""
@@ -133,11 +149,11 @@ class TestContextIntegration:
 
         # Path 1: empty path
         result1 = load_config("")
-        assert result1._context_chain == ("load_config",)
+        assert result1._context_chain.messages == ("load_config",)
 
         # Path 2: wrong format
         result2 = load_config("config.txt")
-        assert result2._context_chain == ("format check", "load_config")
+        assert result2._context_chain.messages == ("format check", "load_config")
 
     def test_inspect_with_context_chain(self) -> None:
         """Test inspect methods work correctly with context chain."""
@@ -155,7 +171,7 @@ class TestContextIntegration:
         )
 
         assert inspected_errors == ["original error", "original error"]
-        assert result._context_chain == ("step 2", "step 1")
+        assert result._context_chain.messages == ("step 2", "step 1")
 
     def test_map_err_preserves_context(self) -> None:
         """Test that map_err preserves context chain."""
@@ -166,7 +182,7 @@ class TestContextIntegration:
         )
 
         assert isinstance(result.err(), ValueError)
-        assert result._context_chain == ("database layer",)
+        assert result._context_chain.messages == ("database layer",)
 
     def test_or_else_with_new_context(self) -> None:
         """Test map_err with new context."""
@@ -179,7 +195,10 @@ class TestContextIntegration:
 
         assert result.is_err()
         assert result.err() == "recovery failed"
-        assert result._context_chain == ("recovery operation", "primary operation")
+        assert result._context_chain.messages == (
+            "recovery operation",
+            "primary operation",
+        )
 
     def test_complex_mixed_operations(self) -> None:
         """Test complex mix of map, and_then, inspect, and context."""

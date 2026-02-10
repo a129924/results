@@ -10,12 +10,12 @@ Exported:
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Generic
 
 from typing_extensions import Never, override
 
-from results.core import E, F, T, U
+from results.core import ContextChain, E, F, T, U
 from results.core.base import Result
 from results.exceptions import UnwrapError
 
@@ -38,8 +38,8 @@ class Err(Result[T, E], Generic[T, E]):
 
     Attributes:
         _error (E): The error value - private attribute accessible via err() method
-        _context_chain (tuple[str, ...]): Chain of context messages in LIFO order.
-            - Empty tuple by default (v0.1.0 compatibility)
+        _context_chain (ContextChain): Chain of context messages in LIFO order.
+            - Empty ContextChain by default (v0.1.0 compatibility)
             - Newest context at index 0 (accessed first when unwrapping)
             - Oldest context at index -1 (appended last)
             - Implements Rust anyhow-style context stacking
@@ -65,7 +65,9 @@ class Err(Result[T, E], Generic[T, E]):
     """
 
     _error: E
-    _context_chain: tuple[str, ...] = ()
+    _context_chain: ContextChain = field(
+        default_factory=ContextChain, repr=False, compare=False
+    )
 
     @override
     def is_ok(self) -> bool:
@@ -174,16 +176,16 @@ class Err(Result[T, E], Generic[T, E]):
         """
         if not isinstance(self._error, Exception):
             # Non-Exception: wrap in UnwrapError with context chain
-            raise UnwrapError("Called unwrap on Err", self._error, self._context_chain)
+            raise UnwrapError(
+                "Called unwrap on Err", self._error, self._context_chain.messages
+            )
 
-        # Format context chain if present
-        if self._context_chain:
-            # LIFO order: newest context first
-            context_str = "\n".join(f"  {ctx}" for ctx in self._context_chain)
+        # Format context chain if present and raise with context
+        if not self._context_chain.is_empty():
+            context_str = self._context_chain.format_lifo()
             error_msg = f"{context_str}\n  {str(self._error)}"
             # Create a new exception with context message, preserve original traceback
             exc = type(self._error)(error_msg)
-
             raise exc from self._error
         # No context, raise directly
         raise self._error from self._error
@@ -243,7 +245,7 @@ class Err(Result[T, E], Generic[T, E]):
             >>> transformed._context_chain
             ('ctx',)
         """
-        return Err(op(self._error), _context_chain=self._context_chain)
+        return Err(op(self._error), self._context_chain)
 
     @override
     def and_then(self, op: Callable[[T], Result[U, F]]) -> Result[U, F | E]:
@@ -354,11 +356,11 @@ class Err(Result[T, E], Generic[T, E]):
         Example:
             >>> result = Err(ValueError("parse error"))
             >>> result = result.context("parsing config")
-            >>> result._context_chain
+            >>> result._context_chain.messages
             ('parsing config',)
 
             >>> result = result.context("loading app")
-            >>> result._context_chain
+            >>> result._context_chain.messages
             ('loading app', 'parsing config')  # LIFO order
 
             >>> # Chainable
@@ -368,10 +370,10 @@ class Err(Result[T, E], Generic[T, E]):
             ...     .context("step B")
             ...     .context("step A")
             ... )
-            >>> result._context_chain
+            >>> result._context_chain.messages
             ('step A', 'step B', 'step C')  # Reversed by LIFO stacking
         """
-        return Err(self._error, _context_chain=(msg, *self._context_chain))
+        return Err(self._error, self._context_chain.push(msg))
 
     @override
     def with_context(self, f: Callable[[], str]) -> Result[T, E]:
@@ -405,7 +407,7 @@ class Err(Result[T, E], Generic[T, E]):
             >>> result = result.with_context(lambda: expensive_debug_info())
             # Returns Ok(200), f() NOT called (no overhead for success case)
         """
-        return self.context(f())
+        return Err(self._error, self._context_chain.push_lazy(f))
 
     def __repr__(self) -> str:
         """Return string representation for debugging.

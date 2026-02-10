@@ -22,6 +22,7 @@ from typing import Any, Generic, TypeVar
 from typing_extensions import override
 
 from results.core.base import Result
+from results.core.context import ContextChain, unwrap_with_context
 from results.result.sync.err import Err
 from results.result.sync.ok import Ok
 
@@ -118,7 +119,7 @@ class AsyncResult(AsyncResultBase[T, E]):
     """
 
     _resolver: Callable[[], Awaitable[Result[T, E]]]
-    _context_chain: tuple[str, ...] = ()
+    _context_chain: ContextChain = ContextChain()
 
     def __await__(self) -> Generator[Any, None, Result[T, E]]:
         """Enable await AsyncResult to return Result[T, E].
@@ -155,18 +156,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         """
         result = await self
         if result.is_err():
-            # Import here to avoid circular dependency
-            from results.exceptions import UnwrapError
-
-            # Format context stack (LIFO order)
-            context_msg = ""
-            if self._context_chain:
-                context_msg = "\n".join(
-                    f"  {i + 1}. {msg}" for i, msg in enumerate(self._context_chain)
-                )
-            raise UnwrapError(
-                f"{context_msg}\n{str(result.err())}", original_error=result.err()
-            ) from None
+            unwrap_with_context(result.err(), self._context_chain)
 
         return result.ok()  # type: ignore
 
@@ -203,8 +193,7 @@ class AsyncResult(AsyncResultBase[T, E]):
             >>> async_result = async_result.context("step 1").context("step 2")
             >>> # Context order (LIFO): "step 2" → "step 1"
         """
-        new_stack = (msg,) + self._context_chain
-        return AsyncResult(self._resolver, new_stack)
+        return AsyncResult(self._resolver, self._context_chain.push(msg))
 
     @override
     def with_context(self, f: Callable[[], str]) -> AsyncResult[T, E]:
@@ -220,7 +209,7 @@ class AsyncResult(AsyncResultBase[T, E]):
             >>> async_result = AsyncResult.from_result(Ok(5))
             >>> async_result = async_result.with_context(lambda: f"time: {now()}")
         """
-        return self.context(f())
+        return AsyncResult(self._resolver, self._context_chain.push_lazy(f))
 
     @override
     def map_async(self, fn: Callable[[T], Awaitable[U]]) -> AsyncResult[U, E]:
@@ -431,7 +420,7 @@ class AsyncResult(AsyncResultBase[T, E]):
 
     def __str__(self) -> str:
         """Return human-readable string."""
-        if self._context_chain:
-            context = "\n  ".join(self._context_chain)
+        if not self._context_chain.is_empty():
+            context = "\n  ".join(self._context_chain.messages)
             return f"AsyncResult(context: {context})"
         return "AsyncResult()"
