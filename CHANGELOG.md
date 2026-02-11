@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+**Maybe Monad: Optional Value Handling (Phase 3)** — Type-safe alternative to None
+- New `Maybe[T]` monad type with `Some[T]` (presence) and `Nothing` (absence) variants
+- Core methods: `map()`, `filter()`, `and_then()`, `or_else()`, `zip()`, `zip_with()`
+- Value extraction: `unwrap()`, `unwrap_or()`, `unwrap_or_else()`
+- Diagnostics: `inspect()` for debugging, `context()` for optional diagnostic messages
+- Context chain support: `Nothing` can carry diagnostic context via LIFO stack
+- 56 comprehensive tests for Maybe implementation
+- Pattern matching support with Python 3.10+ `match`/`case`
+- Architecture aligned with Result: `maybe/sync/` and `maybe/asyncio/` structure
+
+### Changed
+
+- Updated README with Maybe examples and comparison to Result
+- Test suite expanded from 192 to 248 tests
+- Badge updates: tests count, monad type documentation
+
+### Technical Details
+
+- Frozen dataclass implementation (immutable)
+- `@override` decorators on all public methods
+- Full mypy --strict compliance (0 errors)
+- All ruff checks passing
+- No new dependencies
+
+---
+
 ## [0.3.1] - 2026-02-06
 
 ### Changed

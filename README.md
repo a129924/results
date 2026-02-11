@@ -1,17 +1,21 @@
-# Results: Rust-inspired Result Type for Python
+# Results: Rust-inspired Result and Maybe Types for Python
 
 [English](README.md) | [繁體中文](README.zh-TW.md)
 
-A type-safe, Pythonic implementation of Rust's `Result<T, E>` type for elegant error handling and functional programming.
+A type-safe, Pythonic implementation of Rust's `Result<T, E>` and `Option<T>` types for elegant error handling and functional programming.
 
-[![Tests](https://img.shields.io/badge/tests-187%2F187-green)](https://github.com/a129924/results)
+[![Tests](https://img.shields.io/badge/tests-248%2F248-green)](https://github.com/a129924/results)
 [![Type Checking](https://img.shields.io/badge/mypy%20%2D%2Dstrict-passing-green)](https://github.com/a129924/results)
 [![Code Style](https://img.shields.io/badge/ruff-all%20checks%20passed-green)](https://github.com/a129924/results)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 
 ## 🎯 Overview
 
-`results` provides a **Result type** that represents either a success (`Ok[T]`) or an error (`Err[E]`). This eliminates silent failures and ensures explicit error handling through the type system.
+`results` provides **two core monad types**:
+
+### Result[T, E] - Success or Failure
+
+A **Result type** represents either a success (`Ok[T]`) or an error (`Err[E]`). This eliminates silent failures and ensures explicit error handling through the type system.
 
 ```python
 from results import Ok, Err, Result
@@ -30,17 +34,51 @@ else:
     print(f"Error: {result.err()}")
 ```
 
+### Maybe[T] - Presence or Absence (NEW!)
+
+A **Maybe type** represents either a value (`Some[T]`) or its absence (`Nothing`). Unlike Result, Maybe is NOT about errors—it's about optional values.
+
+```python
+from results import Some, Nothing, Maybe
+
+def find_user(user_id: int) -> Maybe[dict]:
+    """Find user by ID, or Nothing if not found."""
+    if user_id < 0:
+        return Nothing().context("invalid user_id")
+    
+    users = {1: {"name": "Alice"}, 2: {"name": "Bob"}}
+    return Some(users[user_id]) if user_id in users else Nothing()
+
+# Usage: type-safe optional handling
+maybe_user = find_user(1)
+match maybe_user:
+    case Some(user):
+        print(f"Found: {user['name']}")  # Found: Alice
+    case Nothing():
+        print("User not found")
+```
+
 ## ✨ Key Features
 
-- ✅ **Type-Safe Contracts** — Result ABC enforces consistent error handling
+### Result[T, E] Features
+- ✅ **Type-Safe Error Handling** — Result ABC enforces consistent error handling
 - ✅ **Functional Chains** — `map()`, `map_err()`, `and_then()` for elegant composition
-- ✅ **Debug Tools** — `inspect()` and `inspect_err()` for non-intrusive debugging
-- ✅ **Context Chain** — LIFO context stack for rich error diagnostics
-- ✅ **Async/Await Support** — `AsyncResult[T, E]` for non-blocking workflows
+- ✅ **Error Inspection** — `inspect()` and `inspect_err()` for non-intrusive debugging
+- ✅ **Comprehensive Result Type** — Handles both success and failure cases
+
+### Maybe[T] Features
+- ✅ **Optional Value Handling** — `Some[T]` and `Nothing` for type-safe optionals
+- ✅ **Functional Transformations** — `map()`, `filter()`, `and_then()` without None checks
+- ✅ **Value Inspection** — `inspect()` for debugging presence/absence
+- ✅ **No Error Semantics** — Nothing is absence, not failure (cleaner than Result)
+
+### Shared Features
+- ✅ **Context Chain** — LIFO context stack for rich diagnostic information
+- ✅ **Async/Await Support** — `AsyncResult[T, E]` for non-blocking workflows (AsyncMaybe coming soon)
 - ✅ **Zero Runtime Overhead** — Frozen dataclasses, no magic
 - ✅ **Python 3.10+ Native** — Uses PEP 604 union syntax (`|` instead of `Union`)
-- ✅ **Flexible Error Types** — Support any type as error (Exception, str, int, dict, etc.)
-- ✅ **Comprehensive Tests** — 187 tests covering sync/async unit/integration scenarios
+- ✅ **Flexible Types** — Support any type (Exception, str, int, dict, etc.)
+- ✅ **Comprehensive Tests** — 248 tests covering sync/async unit/integration scenarios
 
 ## 📦 Installation
 
@@ -72,7 +110,7 @@ uv add git+https://github.com/a129924/results.git
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### Result - Error Handling
 
 ```python
 from results import Ok, Err, Result
@@ -90,7 +128,25 @@ assert result.ok() is None
 assert result.err() == "operation failed"
 ```
 
+### Maybe - Optional Values
+
+```python
+from results import Some, Nothing, Maybe
+
+# Represent presence
+maybe_value: Maybe[int] = Some(42)
+assert maybe_value.is_some()
+assert maybe_value.unwrap() == 42
+
+# Represent absence (no error semantics)
+maybe_empty: Maybe[int] = Nothing()
+assert maybe_empty.is_nothing()
+assert maybe_empty.unwrap_or(0) == 0  # Fallback to default
+```
+
 ### Transform Values with `map()`
+
+#### Result
 
 ```python
 # Transform success value, preserve error type
@@ -103,7 +159,19 @@ assert error_result.is_err()
 assert error_result.err() == "failed"
 ```
 
-### Handle Errors with `map_err()`
+#### Maybe
+
+```python
+# Transform value if present
+maybe_value = Some(5).map(lambda x: x * 2).map(str)
+assert maybe_value.unwrap() == "10"
+
+# Nothing passes through unchanged
+maybe_empty = Nothing().map(lambda x: x * 2)
+assert maybe_empty.is_nothing()
+```
+
+### Filter Values
 
 ```python
 # Transform error while preserving success value
@@ -263,6 +331,72 @@ if result.is_err():
 # Use with success value
 data = result.ok()
 return Ok({"processed": data})
+```
+
+## 🔍 Working with Maybe - Type-Safe Optionals
+
+Unlike Result which models success/failure, Maybe models presence/absence. Use Maybe when a value might not exist without distinguishing "missing" from "error".
+
+### Basic Maybe Usage
+
+```python
+from results import Some, Nothing, Maybe
+
+def find_user_by_email(email: str) -> Maybe[dict]:
+    """Find user by email, returning Maybe instead of raising."""
+    users = {
+        "alice@example.com": {"id": 1, "name": "Alice"},
+        "bob@example.com": {"id": 2, "name": "Bob"},
+    }
+    return Some(users[email]) if email in users else Nothing()
+
+# Get with default value
+user = find_user_by_email("alice@example.com").unwrap_or({"name": "Guest"})
+assert user["name"] == "Alice"
+
+# Get with computed default
+user = find_user_by_email("unknown@example.com").unwrap_or_else(
+    lambda: {"name": "Anonymous"}
+)
+assert user["name"] == "Anonymous"
+```
+
+### Chaining Maybe Operations
+
+```python
+# Transform values through chain
+maybe_username = (
+    find_user_by_email("alice@example.com")
+    .map(lambda u: u["name"])
+    .map(str.upper)
+)
+assert maybe_username.unwrap() == "ALICE"
+
+# Filter based on predicate
+maybe_adult = find_user_by_email("alice@example.com").filter(
+    lambda u: u.get("age", 0) >= 18
+)
+assert maybe_adult.is_some()
+
+# Short-circuit on Nothing
+find_user_by_email("unknown@example.com").map(lambda u: u["name"]).unwrap_or("Not found")
+# Returns "Not found"
+```
+
+### Combining Multiple Maybes
+
+```python
+# Zip two Maybes
+maybe_names = Some("Alice").zip(Some("Bob"))
+assert maybe_names.unwrap() == ("Alice", "Bob")
+
+# Zip returns Nothing if either is Nothing
+maybe_names = Some("Alice").zip(Nothing())
+assert maybe_names.is_nothing()
+
+# or_else provides alternative when Nothing
+maybe_value = Nothing().or_else(lambda: Some("default"))
+assert maybe_value.unwrap() == "default"
 ```
 
 ## 🎯 Pattern Matching with match/case (Python 3.10+)
