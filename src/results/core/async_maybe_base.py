@@ -82,7 +82,7 @@ class AsyncMaybeBase(ABC, Generic[T]):
         ...
 
     @abstractmethod
-    async def map_async(self, fn: Callable[[T], Awaitable[U]]) -> AsyncMaybeBase[U]:
+    def map_async(self, fn: Callable[[T], Awaitable[U]]) -> AsyncMaybeBase[U]:
         """Transform value asynchronously if present, short-circuit if absent.
 
         If value is Some, awaits fn(value) and returns AsyncMaybe with result.
@@ -106,7 +106,7 @@ class AsyncMaybeBase(ABC, Generic[T]):
         ...
 
     @abstractmethod
-    async def and_then_async(
+    def and_then_async(
         self, fn: Callable[[T], Awaitable[Maybe[U]]]
     ) -> AsyncMaybeBase[U]:
         """Chain async operations returning Maybe, flattening the result.
@@ -131,9 +131,7 @@ class AsyncMaybeBase(ABC, Generic[T]):
         ...
 
     @abstractmethod
-    async def or_else_async(
-        self, fn: Callable[[], Awaitable[Maybe[T]]]
-    ) -> AsyncMaybeBase[T]:
+    def or_else_async(self, fn: Callable[[], Awaitable[Maybe[T]]]) -> AsyncMaybeBase[T]:
         """Provide alternative async operation if absent.
 
         If value is Some, returns self unchanged.
@@ -155,9 +153,7 @@ class AsyncMaybeBase(ABC, Generic[T]):
         ...
 
     @abstractmethod
-    async def inspect_async(
-        self, fn: Callable[[T], Awaitable[None]]
-    ) -> AsyncMaybeBase[T]:
+    def inspect_async(self, fn: Callable[[T], Awaitable[None]]) -> AsyncMaybeBase[T]:
         """Inspect value for side effects without modification.
 
         If value is Some, awaits fn(value) for side effects then returns self.

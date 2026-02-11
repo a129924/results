@@ -90,7 +90,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
         return self._resolver().__await__()
 
     @override
-    async def map_async(self, fn: Callable[[T], Awaitable[U]]) -> AsyncMaybe[U]:
+    def map_async(self, fn: Callable[[T], Awaitable[U]]) -> AsyncMaybe[U]:
         """Transform value asynchronously if present, short-circuit if absent.
 
         If value is Some, awaits fn(value) and returns AsyncMaybe with result.
@@ -126,9 +126,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
     @override
-    async def and_then_async(
-        self, fn: Callable[[T], Awaitable[Maybe[U]]]
-    ) -> AsyncMaybe[U]:
+    def and_then_async(self, fn: Callable[[T], Awaitable[Maybe[U]]]) -> AsyncMaybe[U]:
         """Chain async operations returning Maybe, flattening the result.
 
         If value is Some, awaits fn(value) and returns the result as AsyncMaybe.
@@ -160,9 +158,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
     @override
-    async def or_else_async(
-        self, fn: Callable[[], Awaitable[Maybe[T]]]
-    ) -> AsyncMaybe[T]:
+    def or_else_async(self, fn: Callable[[], Awaitable[Maybe[T]]]) -> AsyncMaybe[T]:
         """Provide alternative async operation if absent.
 
         If value is Some, returns self unchanged.
@@ -198,7 +194,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
     @override
-    async def inspect_async(self, fn: Callable[[T], Awaitable[None]]) -> AsyncMaybe[T]:
+    def inspect_async(self, fn: Callable[[T], Awaitable[None]]) -> AsyncMaybe[T]:
         """Inspect value for side effects without modification.
 
         If value is Some, awaits fn(value) for side effects then returns self.
