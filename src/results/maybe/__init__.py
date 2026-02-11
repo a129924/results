@@ -21,6 +21,7 @@ Example:
 from __future__ import annotations
 
 from .asyncio.maybe import AsyncMaybe
+from .sync.helpers import flatten, get_or_insert, map_or, transpose
 from .sync.nothing import Nothing
 from .sync.some import Some
 
@@ -28,4 +29,8 @@ __all__ = [
     "Some",
     "Nothing",
     "AsyncMaybe",
+    "flatten",
+    "transpose",
+    "map_or",
+    "get_or_insert",
 ]

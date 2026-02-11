@@ -259,19 +259,16 @@ class AsyncMaybe(AsyncMaybeBase[T]):
             >>> value = await async_maybe.unwrap_async()  # raises UnwrapError
         """
         maybe = await self
-        match maybe:
-            case Some(value):
-                return value
-            case Nothing():
-                # Raise with context chain
-                msg = "Called unwrap() on Nothing"
-                context_str = " → ".join(self._context_chain.messages)
-                if context_str:
-                    msg = f"{msg}\nContext:\n  {context_str}"
-                raise UnwrapError(msg, self._context_chain) from None
-            case unexpected:
-                # Should never happen if invariants hold
-                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
+        if isinstance(maybe, Some):
+            some: Some[T] = maybe
+            return some.value
+        if isinstance(maybe, Nothing):
+            msg = "Called unwrap() on Nothing"
+            context_str = " → ".join(self._context_chain.messages)
+            if context_str:
+                msg = f"{msg}\nContext:\n  {context_str}"
+            raise UnwrapError(msg, self._context_chain) from None
+        raise TypeError(f"Unexpected Maybe variant: {maybe!r}")
 
     @override
     async def unwrap_or_async(self, default: T) -> T:
@@ -291,14 +288,12 @@ class AsyncMaybe(AsyncMaybeBase[T]):
             >>> value = await async_maybe.unwrap_or_async(99)  # 99
         """
         maybe = await self
-        match maybe:
-            case Some(value):
-                return value
-            case Nothing():
-                return default
-            case unexpected:
-                # Should never happen if invariants hold
-                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
+        if isinstance(maybe, Some):
+            some: Some[T] = maybe
+            return some.value
+        if isinstance(maybe, Nothing):
+            return default
+        raise TypeError(f"Unexpected Maybe variant: {maybe!r}")
 
     @override
     async def unwrap_or_else_async(self, fn: Callable[[], Awaitable[T]]) -> T:
@@ -321,14 +316,12 @@ class AsyncMaybe(AsyncMaybeBase[T]):
             # value == 99
         """
         maybe = await self
-        match maybe:
-            case Some(value):
-                return value
-            case Nothing():
-                return await fn()
-            case unexpected:
-                # Should never happen if invariants hold
-                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
+        if isinstance(maybe, Some):
+            some: Some[T] = maybe
+            return some.value
+        if isinstance(maybe, Nothing):
+            return await fn()
+        raise TypeError(f"Unexpected Maybe variant: {maybe!r}")
 
     @override
     def context(self, msg: str) -> AsyncMaybe[T]:
