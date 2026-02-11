@@ -122,6 +122,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 case Nothing():
                     # Short-circuit: return same Nothing as Maybe[U]
                     return cast(Maybe[U], current)
+                case unexpected:
+                    # Should never happen if invariants hold
+                    raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
@@ -154,6 +157,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 case Nothing():
                     # Short-circuit: return same Nothing as Maybe[U]
                     return cast(Maybe[U], current)
+                case unexpected:
+                    # Should never happen if invariants hold
+                    raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
@@ -226,6 +232,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 case Nothing():
                     # Short-circuit
                     return cast(Maybe[T], current)
+                case unexpected:
+                    # Should never happen if invariants hold
+                    raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
         return AsyncMaybe(lambda: transformed(), self._context_chain)
 
@@ -260,9 +269,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 if context_str:
                     msg = f"{msg}\nContext:\n  {context_str}"
                 raise UnwrapError(msg, self._context_chain) from None
-            case _:
+            case unexpected:
                 # Should never happen if invariants hold
-                raise
+                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
     @override
     async def unwrap_or_async(self, default: T) -> T:
@@ -287,9 +296,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 return value
             case Nothing():
                 return default
-            case _:
+            case unexpected:
                 # Should never happen if invariants hold
-                raise
+                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
     @override
     async def unwrap_or_else_async(self, fn: Callable[[], Awaitable[T]]) -> T:
@@ -317,9 +326,9 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 return value
             case Nothing():
                 return await fn()
-            case _:
+            case unexpected:
                 # Should never happen if invariants hold
-                raise
+                raise TypeError(f"Unexpected Maybe variant: {unexpected!r}")
 
     @override
     def context(self, msg: str) -> AsyncMaybe[T]:
@@ -416,7 +425,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
             if task is None:
                 loop = asyncio.get_running_loop()
                 if isinstance(aw, asyncio.Future):
-                    task = cast(asyncio.Future[Maybe[T]], aw)
+                    task = aw
                 else:
                     task = cast(asyncio.Task[Maybe[T]], loop.create_task(aw))  # type: ignore
             return await task
