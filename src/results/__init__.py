@@ -37,7 +37,7 @@ __version__ = "0.3.1"
 from results.core.base import Result
 from results.core.maybe_base import Maybe
 from results.exceptions import UnwrapError
-from results.maybe import Nothing, Some
+from results.maybe import AsyncMaybe, Nothing, Some
 from results.result import AsyncResult, Err, Ok
 
 __all__ = [
@@ -48,5 +48,6 @@ __all__ = [
     "Maybe",
     "Some",
     "Nothing",
+    "AsyncMaybe",
     "UnwrapError",
 ]

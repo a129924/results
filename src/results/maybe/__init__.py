@@ -20,9 +20,12 @@ Example:
 
 from __future__ import annotations
 
-from .sync.maybe import Nothing, Some
+from .asyncio.maybe import AsyncMaybe
+from .sync.nothing import Nothing
+from .sync.some import Some
 
 __all__ = [
     "Some",
     "Nothing",
+    "AsyncMaybe",
 ]
