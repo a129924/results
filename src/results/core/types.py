@@ -8,6 +8,9 @@ Type Variables:
     - E: Represents the error type (must be Exception subclass for proper error handling)
     - U: Represents transformation output type for map operations (use in method signatures)
     - F: Represents alternative error type for error composition (use in method signatures)
+    - L: Represents the left outcome type in Either[L, R] (no constraints)
+    - R: Represents the right outcome type in Either[L, R] (no constraints)
+    - V: Represents alternative right type for Either transformations (use in method signatures)
 """
 
 from typing import TypeVar
@@ -37,9 +40,31 @@ U = TypeVar("U")
 # Example: result.and_then(fn) -> Result[U, F | E] where F is the new error type
 F = TypeVar("F")
 
+# Left outcome type variable
+# Used to represent the left value type in Either[L, R]
+# No constraints - can be any type (conventionally error-like, but no requirement)
+# Example: Either[str, User] means L=str (error message)
+L = TypeVar("L")
+
+# Right outcome type variable
+# Used to represent the right value type in Either[L, R]
+# No constraints - can be any type (conventionally success-like by convention, but no requirement)
+# Example: Either[str, User] means R=User (success case)
+R = TypeVar("R")
+
+# Alternative right type variable
+# Used in Either transformations and bimap operations
+# No constraints - can be any type, same as R
+# Represents the right type from a transformation
+# Example: bimap(...) -> Either[U, V] where V is new right type
+V = TypeVar("V")
+
 __all__ = [
     "T",
     "E",
     "U",
     "F",
+    "L",
+    "R",
+    "V",
 ]
