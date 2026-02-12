@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Generator
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from typing_extensions import override
 
@@ -747,7 +747,7 @@ class AsyncEither(AsyncEitherBase[L, R]):
                     task = aw
                 else:
                     task = loop.create_task(aw)  # type: ignore
-            return await task  # type: ignore
+            return await task
 
         return resolver
 

@@ -12,9 +12,31 @@ Exports:
     Left: Left variant
     Right: Right variant
     AsyncEither: Awaitable wrapper for async/await workflows
+    flatten: Flatten nested Either
+    swap: Swap Left and Right outcomes
+    from_ok_err: Convert Result to Either
+    partition: Partition sequence of Either by variant
+    sequence: Collect Either sequence into Either of list
 """
 
 from .asyncio import AsyncEither
-from .sync import Left, Right
+from .sync import (
+    Left,
+    Right,
+    flatten,
+    from_ok_err,
+    partition,
+    sequence,
+    swap,
+)
 
-__all__ = ["Left", "Right", "AsyncEither"]
+__all__ = [
+    "Left",
+    "Right",
+    "AsyncEither",
+    "flatten",
+    "swap",
+    "from_ok_err",
+    "partition",
+    "sequence",
+]
