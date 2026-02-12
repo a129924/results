@@ -1,6 +1,6 @@
-"""Results package - Rust-inspired Result and Maybe types for Python.
+"""Results package - Rust-inspired Result, Maybe, and Either types for Python.
 
-This package provides Result and Maybe types similar to Rust's for elegant
+This package provides Result, Maybe, and Either types similar to Rust's for elegant
 error handling and type-safe operations.
 
 Basic usage:
@@ -19,6 +19,14 @@ Basic usage:
     >>> find_user(1).map(str.upper).unwrap_or("Unknown")
     "USER 1"
 
+    >>> from results import Left, Right, Either
+    >>> def process(x: int) -> Either[str, int]:
+    ...     if x < 0:
+    ...         return Left("negative")
+    ...     return Right(x * 2)
+    >>> process(5).map_right(lambda v: v + 1).unwrap_right()
+    11
+
 Exports:
     - Result: Base Result type
     - Ok: Success variant
@@ -27,6 +35,11 @@ Exports:
     - Maybe: Base Maybe type
     - Some: Presence variant
     - Nothing: Absence variant
+    - AsyncMaybe: Async Maybe variant
+    - Either: Base Either type
+    - Left: Left variant
+    - Right: Right variant
+    - AsyncEither: Async Either variant
     - UnwrapError: Exception raised by unwrap() on Err/Nothing
 """
 
@@ -37,7 +50,7 @@ __version__ = "0.4.0"
 from results.core.base import Result
 from results.core.either_base import Either
 from results.core.maybe_base import Maybe
-from results.either import Left, Right
+from results.either import AsyncEither, Left, Right
 from results.exceptions import UnwrapError
 from results.maybe import AsyncMaybe, Nothing, Some
 from results.result import AsyncResult, Err, Ok
@@ -54,6 +67,6 @@ __all__ = [
     "Either",
     "Left",
     "Right",
-    "AsyncMaybe",
+    "AsyncEither",
     "UnwrapError",
 ]

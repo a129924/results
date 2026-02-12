@@ -11,8 +11,10 @@ support context chains for diagnostic information.
 Exports:
     Left: Left variant
     Right: Right variant
+    AsyncEither: Awaitable wrapper for async/await workflows
 """
 
+from .asyncio import AsyncEither
 from .sync import Left, Right
 
-__all__ = ["Left", "Right"]
+__all__ = ["Left", "Right", "AsyncEither"]

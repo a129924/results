@@ -1,7 +1,9 @@
-"""Async implementation of Either type (Phase 4.B).
+"""Async implementation of Either type.
 
-Placeholder for AsyncEither implementation.
-To be implemented in Phase 4.B.
+Exports:
+    - AsyncEither: Awaitable wrapper for Either[L, R] with async methods
 """
 
-__all__ = []
+from .either import AsyncEither
+
+__all__ = ["AsyncEither"]
