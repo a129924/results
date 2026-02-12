@@ -20,11 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 56 comprehensive tests for Maybe implementation
 - Pattern matching support with Python 3.10+ `match`/`case`
 - Architecture aligned with Result: `maybe/sync/` and `maybe/asyncio/` structure
+- AsyncMaybe for async/await workflows with `map_async`, `and_then_async`, `or_else_async`, `inspect_async`
+- AsyncMaybe unwrap helpers: `unwrap_async`, `unwrap_or_async`, `unwrap_or_else_async`
+- Maybe helper functions: `flatten`, `transpose`, `map_or`, `get_or_insert`
+- Integration tests for Result ↔ Maybe interop and async scenarios
 
 ### Changed
 
 - Updated README with Maybe examples and comparison to Result
-- Test suite expanded from 192 to 248 tests
+- Test suite expanded from 192 to 297 tests
 - Badge updates: tests count, monad type documentation
 
 ### Technical Details
