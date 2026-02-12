@@ -32,7 +32,7 @@ Exports:
 
 from __future__ import annotations
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 from results.core.base import Result
 from results.core.maybe_base import Maybe
