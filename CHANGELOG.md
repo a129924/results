@@ -11,6 +11,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-02-12
+
+### Added
+
+**Either Monad: Symmetric Outcome Handling (Phase 4)**
+- New `Either[L, R]` monad type with `Left[L]` (non-success) and `Right[R]` (success) variants
+- Symmetric design: Both Left/Right branches are equal (unlike Result, where Left is always error)
+- Core methods: `map()`, `map_left()`, `bimap()`, `and_then()`, `and_then_left()`, `or_else()`, `or_else_left()`
+- Value extraction: `unwrap_async()`, `unwrap_left_async()`, `unwrap_or()`, `unwrap_or_else()`
+- Diagnostics: `inspect()`, `inspect_left()`, `context()` chains for both branches
+- Context chain support (LIFO): Both Left and Right can carry diagnostic context
+- 127 comprehensive sync tests covering all Either operations
+- Helper functions: `flatten()`, `swap()`, `from_ok_err()`, `partition()`, `sequence()`
+- Architecture aligned with Result/Maybe: `either/sync/` and `either/asyncio/` structure
+- AsyncEither for async/await workflows with all 15 async methods
+- AsyncEither helper methods: Mirrored async versions of all sync operations
+- 42 comprehensive AsyncEither tests with full coverage
+- Pattern matching support with Python 3.10+ `match`/`case`
+
+### Added (Infrastructure)
+
+**Common Protocols Module** — Shared type hints across all monads
+- New `common/` module with `protocols.py` containing 8 reusable protocols:
+  - `ContextAware`: Context stacking interface
+  - `Unwrappable`: Unwrap operation interface
+  - `Inspectable`: Inspection methods interface
+  - `Mappable`: Transformation interface
+  - `Chainable`: Monadic chaining interface
+  - `AsyncMappable`: Async transformation interface
+  - `OkMixin`: is_ok/ok method combination
+  - `ErrMixin`: is_err/err method combination
+- Improved type hints across Result, Maybe, Either using protocols
+- Documentation protocols for future monad types
+
+### Changed
+
+- Test suite expanded from 424 to 466 tests (Phase 4.B.3)
+- Total codebase: Either (187 lines helpers) + AsyncEitherBase (451 lines) + AsyncEither impl (768 lines)
+- Package structure: Either helpers updated to use `common.protocols` for better type hints
+
+### Technical Details
+
+- Frozen dataclass implementation (immutable, no `__slots__` for pickle compatibility)
+- `@override` decorators on all public methods (15 async methods in AsyncEither)
+- Type narrowing using `cast()` for safe generic type extraction
+- LIFO context chain on both Left and Right variants
+- Full mypy --strict compliance (33 files, 0 errors)
+- All ruff checks passing
+- Operation queue pattern for atomic async evaluation
+- No new dependencies
+
+### Backward Compatibility
+
+✅ **100% backward compatible** — No changes to Result/Maybe APIs
+- All Result and Maybe tests remain passing (424 → 466 total)
+- New Either types are isolated additions
+- No breaking changes to existing public interfaces
+
+---
+
 ## [0.4.0] - 2026-02-12
 
 ### Added

@@ -17,7 +17,7 @@ with TypeVars. This is a pragmatic trade-off for documentation purposes.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
 
 
 class ContextAware(Protocol):
@@ -238,3 +238,34 @@ class AsyncMappable(Protocol):
             >>> await AsyncResult.from_result(Err("bad")).map_err_async(format_error)
         """
         ...
+
+
+OkT = TypeVar("OkT", covariant=True)
+ErrT = TypeVar("ErrT", covariant=True)
+
+
+# 定義 is_ok ok is_err err 的 Able classes for type hinting and protocol adherence across monad types.
+class IsOkAble(Protocol[OkT, ErrT]):
+    def is_ok(self) -> bool: ...
+
+
+class OkAble(Protocol[OkT, ErrT]):
+    def ok(self) -> OkT: ...
+
+
+class IsErrAble(Protocol[OkT, ErrT]):
+    def is_err(self) -> bool: ...
+
+
+class ErrAble(Protocol[OkT, ErrT]):
+    def err(self) -> ErrT: ...
+
+
+# Mixin for types that have is_ok and ok methods (like Result)
+class OkMixin(IsOkAble[OkT, ErrT], OkAble[OkT, ErrT]):
+    pass
+
+
+# Mixin for types that have is_err and err methods (like Result)
+class ErrMixin(IsErrAble[OkT, ErrT], ErrAble[OkT, ErrT]):
+    pass

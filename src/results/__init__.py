@@ -45,7 +45,7 @@ Exports:
 
 from __future__ import annotations
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 from results.core.base import Result
 from results.core.either_base import Either

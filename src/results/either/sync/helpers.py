@@ -17,6 +17,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TypeVar
 
+from results.common.protocols import ErrMixin, OkMixin
 from results.core.either_base import Either
 
 from .left import Left
@@ -101,7 +102,7 @@ def swap(either: Either[L, R]) -> Either[R, L]:
         return Right(either.left())  # type: ignore
 
 
-def from_ok_err(result: T) -> Either[E, R]:
+def from_ok_err(result: OkMixin[T, E] | ErrMixin[T, E]) -> Either[E, T]:
     """Convert Result[T, E] to Either[E, T].
 
     Flips error and value positions to create an Either from a Result.

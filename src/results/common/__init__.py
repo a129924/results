@@ -16,8 +16,10 @@ from .protocols import (
     AsyncMappable,
     Chainable,
     ContextAware,
+    ErrMixin,
     Inspectable,
     Mappable,
+    OkMixin,
     Unwrappable,
 )
 
@@ -28,4 +30,6 @@ __all__ = [
     "Mappable",
     "Chainable",
     "AsyncMappable",
+    "OkMixin",
+    "ErrMixin",
 ]
