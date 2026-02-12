@@ -63,7 +63,7 @@ class TestNothingMap:
 
     def test_map_returns_nothing(self) -> None:
         """map() returns Nothing unchanged."""
-        result = Nothing().map(lambda x: x * 2)
+        result = Nothing[int]().map(lambda x: x * 2)
         assert result.is_nothing() is True
 
     def test_map_never_calls_function(self) -> None:
@@ -75,7 +75,7 @@ class TestNothingMap:
             call_count += 1
             return x * 2
 
-        result = Nothing().map(multiply)
+        result = Nothing[int]().map(multiply)
         assert result.is_nothing() is True
         assert call_count == 0
 
@@ -89,7 +89,7 @@ class TestNothingMap:
             return x * 2
 
         result = (
-            Nothing()
+            Nothing[int]()
             .map(count_and_transform)
             .map(count_and_transform)
             .map(count_and_transform)
@@ -103,7 +103,7 @@ class TestNothingFilter:
 
     def test_filter_returns_nothing(self) -> None:
         """filter() returns Nothing unchanged."""
-        result = Nothing().filter(lambda x: x > 0)
+        result = Nothing[int]().filter(lambda x: x > 0)
         assert result.is_nothing() is True
 
     def test_filter_never_calls_predicate(self) -> None:
@@ -115,7 +115,7 @@ class TestNothingFilter:
             call_count += 1
             return x > 0
 
-        result = Nothing().filter(check)
+        result = Nothing[int]().filter(check)
         assert result.is_nothing() is True
         assert call_count == 0
 
@@ -132,7 +132,7 @@ class TestNothingAndThen:
             call_count += 1
             return Some(x * 2)
 
-        result = Nothing().and_then(compute_next)
+        result = Nothing[int]().and_then(compute_next)
         assert result.is_nothing() is True
         assert call_count == 0
 
@@ -145,7 +145,7 @@ class TestNothingAndThen:
             call_count += 1
             return Some(x + 1)
 
-        result = Nothing().and_then(increment).and_then(increment)
+        result = Nothing[int]().and_then(increment).and_then(increment)
         assert result.is_nothing() is True
         assert call_count == 0
 
@@ -155,13 +155,13 @@ class TestNothingOrElse:
 
     def test_or_else_calls_alternative(self) -> None:
         """or_else() computes alternative when Nothing."""
-        result = Nothing().or_else(lambda: Some(42))
+        result = Nothing[int]().or_else(lambda: Some(42))
         assert result.is_some() is True
         assert result.unwrap() == 42
 
     def test_or_else_can_stay_nothing(self) -> None:
         """or_else() can return Nothing."""
-        result = Nothing().or_else(lambda: Nothing())
+        result = Nothing[int]().or_else(lambda: Nothing[int]())
         assert result.is_nothing() is True
 
     def test_or_else_lazy_evaluation(self) -> None:
@@ -173,7 +173,7 @@ class TestNothingOrElse:
             call_count += 1
             return Some(42)
 
-        Nothing().or_else(compute_alternative)
+        Nothing[int]().or_else(compute_alternative)
         assert call_count == 1
 
 
@@ -182,12 +182,12 @@ class TestNothingZip:
 
     def test_zip_with_some_returns_nothing(self) -> None:
         """zip() with Some returns Nothing."""
-        result = Nothing().zip(Some(1))
+        result = Nothing[int]().zip(Some(1))
         assert result.is_nothing() is True
 
     def test_zip_with_nothing_returns_nothing(self) -> None:
         """zip() with Nothing returns Nothing."""
-        result = Nothing().zip(Nothing())
+        result = Nothing[int]().zip(Nothing[int]())
         assert result.is_nothing() is True
 
 
@@ -196,7 +196,7 @@ class TestNothingZipWith:
 
     def test_zip_with_some_returns_nothing(self) -> None:
         """zip_with() with Some returns Nothing."""
-        result = Nothing().zip_with(Some(1), lambda a, b: a + b)
+        result = Nothing[int]().zip_with(Some[int](1), lambda a, b: a + b)
         assert result.is_nothing() is True
 
     def test_zip_with_function_never_called(self) -> None:
@@ -208,7 +208,7 @@ class TestNothingZipWith:
             call_count += 1
             return a + b
 
-        result = Nothing().zip_with(Some(1), combine)
+        result = Nothing[int]().zip_with(Some[int](1), combine)
         assert result.is_nothing() is True
         assert call_count == 0
 
@@ -219,7 +219,7 @@ class TestNothingInspect:
     def test_inspect_no_op(self) -> None:
         """inspect() is no-op on Nothing."""
         values: list[int] = []
-        result = Nothing().inspect(lambda x: values.append(x))
+        result = Nothing[int]().inspect(lambda x: values.append(x))
         assert values == []  # Never called
         assert result.is_nothing() is True
 
@@ -231,7 +231,7 @@ class TestNothingInspect:
             nonlocal call_count
             call_count += 1
 
-        Nothing().inspect(count)
+        Nothing[int]().inspect(count)
         assert call_count == 0
 
 
@@ -240,14 +240,14 @@ class TestNothingContext:
 
     def test_context_adds_message(self) -> None:
         """context() adds diagnostic message to Nothing."""
-        nothing_with_ctx = Nothing().context("user not found")
+        nothing_with_ctx = Nothing[int]().context("user not found")
         # Verify it's still Nothing
         assert nothing_with_ctx.is_nothing() is True
 
     def test_context_message_in_error(self) -> None:
         """context() message appears in unwrap error."""
         with pytest.raises(UnwrapError) as exc_info:
-            Nothing().context("user not found").unwrap()
+            Nothing[int]().context("user not found").unwrap()
         # Error message should contain context
         error_str = str(exc_info.value)
         assert "user not found" in error_str or "Nothing" in error_str
@@ -255,7 +255,7 @@ class TestNothingContext:
     def test_context_chain_lifo(self) -> None:
         """context() builds LIFO chain."""
         nothing_with_ctx = (
-            Nothing().context("step 1").context("step 2").context("step 3")
+            Nothing[int]().context("step 1").context("step 2").context("step 3")
         )
         with pytest.raises(UnwrapError) as exc_info:
             nothing_with_ctx.unwrap()
@@ -273,7 +273,7 @@ class TestNothingContext:
             return "diagnostic info"
 
         # push_lazy computes the function when called
-        nothing_with_ctx = Nothing().with_context(expensive_diagnostic)
+        nothing_with_ctx = Nothing[int]().with_context(expensive_diagnostic)
         # Function IS called during with_context
         assert call_count == 1
         # Message is added to context chain
@@ -285,7 +285,7 @@ class TestNothingContext:
 
     def test_reason_field(self) -> None:
         """Nothing can have optional reason."""
-        nothing_with_reason = Nothing(_reason="specific reason")
+        nothing_with_reason = Nothing[int](_reason="specific reason")
         assert nothing_with_reason.is_nothing() is True
 
 
@@ -304,7 +304,7 @@ class TestNothingIntegration:
 
     def test_early_exit_on_nothing(self) -> None:
         """Operation stops immediately on Nothing."""
-        operations = []
+        operations: list[str] = []
 
         def track_operation(name: str):
             def operation(x: int) -> Maybe[int]:
@@ -314,7 +314,7 @@ class TestNothingIntegration:
             return operation
 
         result = (
-            Some(5)
+            Some[int](5)
             .and_then(track_operation("op1"))  # Executed
             .filter(lambda x: x > 10)  # False, becomes Nothing
             .and_then(track_operation("op2"))  # Skipped
