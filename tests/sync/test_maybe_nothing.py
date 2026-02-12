@@ -41,7 +41,7 @@ class TestNothingBasics:
 
     def test_unwrap_or_returns_default(self) -> None:
         """unwrap_or() returns default when Nothing."""
-        result = Nothing().unwrap_or(42)
+        result = Nothing[int]().unwrap_or(42)
         assert result == 42
 
     def test_unwrap_or_else_computes_default(self) -> None:
@@ -53,7 +53,7 @@ class TestNothingBasics:
             call_count += 1
             return 42
 
-        result = Nothing().unwrap_or_else(compute_default)
+        result = Nothing[int]().unwrap_or_else(compute_default)
         assert result == 42
         assert call_count == 1  # Called once
 
