@@ -11,6 +11,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-02-26
+
+### Added
+
+**Result unwrap_or Methods (Phase 2)** — Consistent API for value extraction
+- New `Result.unwrap_or(default: T) -> T` — Extract success value or return default
+- New `Result.unwrap_or_else(f: Callable[[E], T]) -> T` — Extract or compute from error
+- New `AsyncResult.unwrap_or_async(default: T) -> T` — Async version of unwrap_or
+- New `AsyncResult.unwrap_or_else_async(fn: Callable[[E], Awaitable[T]]) -> T` — Async computed version
+- API consistency: All monad types (Result, Maybe, Either) now have complete unwrap_or methods
+- Enhanced error recovery capabilities without unwrapping exceptions
+
+### Changed
+
+- Test suite expanded from 466 to 488 tests (+22 new test cases)
+  - 7 tests for Ok.unwrap_or and Ok.unwrap_or_else variants
+  - 8 tests for Err.unwrap_or and Err.unwrap_or_else variants
+  - 7 tests for AsyncResult async variant methods
+- Core base class updated with 2 new abstract methods
+
+### Technical Details
+
+- Frozen dataclass implementation maintained (immutable)
+- `@override` decorators on all new public methods
+- Full mypy --strict compliance (0 errors)
+- All ruff checks passing
+- No new dependencies
+
+### Backward Compatibility
+
+✅ **100% backward compatible** — Pure additive changes
+- All Result, Maybe, and Either tests remain passing (466 → 488 total)
+- New methods only extend existing API
+- No breaking changes to existing public interfaces
+
+---
+
 ## [0.5.0] - 2026-02-12
 
 ### Added

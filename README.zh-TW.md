@@ -4,7 +4,7 @@
 
 一個型別安全、Pythonic 的實現，靈感源自 Rust 的 `Result<T, E>` 型別，提供優雅的錯誤處理和函數式編程。
 
-[![Tests](https://img.shields.io/badge/tests-187%2F187-green)](https://github.com/a129924/results)
+[![Tests](https://img.shields.io/badge/tests-488%2F488-green)](https://github.com/a129924/results)
 [![Type Checking](https://img.shields.io/badge/mypy%20%2D%2Dstrict-passing-green)](https://github.com/a129924/results)
 [![Code Style](https://img.shields.io/badge/ruff-all%20checks%20passed-green)](https://github.com/a129924/results)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)

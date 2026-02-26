@@ -4,7 +4,7 @@
 
 A type-safe, Pythonic implementation of Rust's `Result<T, E>` and `Option<T>` types for elegant error handling and functional programming.
 
-[![Tests](https://img.shields.io/badge/tests-248%2F248-green)](https://github.com/a129924/results)
+[![Tests](https://img.shields.io/badge/tests-488%2F488-green)](https://github.com/a129924/results)
 [![Type Checking](https://img.shields.io/badge/mypy%20%2D%2Dstrict-passing-green)](https://github.com/a129924/results)
 [![Code Style](https://img.shields.io/badge/ruff-all%20checks%20passed-green)](https://github.com/a129924/results)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)

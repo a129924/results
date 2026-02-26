@@ -1,6 +1,6 @@
 [project]
 name = "results"
-version = "0.5.0"
+version = "0.6.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -38,7 +38,7 @@ ignore = [
 [tool.pyright]
 typeCheckingMode = "strict"
 pythonVersion = "3.10"
-exclude = ["docs/examples/", "**/.*"]
+exclude = ["docs/examples/", "**/.*", "**/__pycache__/", "build/", "dist/", "venv/", "env/", ".venv/", "**/node_modules", "**/__pycache__", ".venv",]
 reportMissingImports = true
 reportUnusedImport = true
 reportUnusedVariable = true
