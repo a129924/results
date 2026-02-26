@@ -35,15 +35,19 @@ ignore = [
     "W191",  # indentation contains tabs
 ]
 
-[tool.mypy]
-strict = true
-ignore_missing_imports = true
-# Example files are for documentation/education, not production code
-exclude = ["docs/examples/"]
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.10"
+exclude = ["docs/examples/", "**/.*"]
+reportMissingImports = true
+reportUnusedImport = true
+reportUnusedVariable = true
+reportGeneralTypeIssues = true
+reportMissingTypeStubs = false
 
 [dependency-groups]
 dev = [
-    "mypy>=1.19.1",
+    "pyright>=1.1.309",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.14.13",
