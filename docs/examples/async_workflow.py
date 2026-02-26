@@ -10,8 +10,9 @@ Install httpx for real HTTP: pip install httpx
 """
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import datetime
-from typing import Awaitable, Callable, Literal, TypedDict
+from typing import Literal, TypedDict
 
 from results import AsyncResult, Err, Ok, Result
 
