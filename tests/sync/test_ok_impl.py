@@ -34,8 +34,8 @@ class TestOkCreation:
 
     def test_ok_with_complex_type(self) -> None:
         """Test Ok with complex nested type."""
-        data = {"key": [1, 2, 3]}
-        result: Result[dict, str] = Ok(data)
+        data: dict[str, list[int]] = {"key": [1, 2, 3]}
+        result: Result[dict[str, list[int]], str] = Ok(data)
         assert result.is_ok()
         assert result.ok() == data
 
