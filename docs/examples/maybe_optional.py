@@ -7,8 +7,6 @@ Demonstrates why Maybe[T] is safer than Optional[T].
 Run: python maybe_optional.py
 """
 
-from typing import Optional
-
 from typing_extensions import TypedDict
 
 from results import Maybe, Nothing, Some
@@ -170,7 +168,7 @@ Optional[T] issues:
   ❌ Can't distinguish between None values (is it absence or error?)
   ❌ Type checker can't enforce non-None checks (Optional[int] could be None)
   ❌ mypy can't catch all None dereferences
-  
+
 Maybe[T] benefits:
   ✓ Explicit Some(value) or Nothing()
   ✓ Type checking enforces pattern matching

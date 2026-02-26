@@ -7,7 +7,25 @@ Demonstrates Either[L, R] for non-error branching logic.
 Run: python either_validation.py
 """
 
+from enum import Enum
+from typing import Literal, TypedDict
+
+from typing_extensions import NotRequired, Required
+
 from results import Either, Left, Right
+
+
+class EvaluateStatus(Enum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    MANUAL_REVIEW = "manual_review"
+
+
+class PaymentInfo(TypedDict, total=True):
+    status: Required[Literal["success", "error"]]
+    message: NotRequired[str]
+    amount: NotRequired[int]
+
 
 # ============================================================================
 # 1. When to Use Either (vs Result)
@@ -28,7 +46,7 @@ Either[L, R]: Two equally valid outcomes (L, R)
     - Admin user OR regular user
     - Local cache OR remote fetch
     - User action OR system action
-    - Approved OR rejected
+    - Approved OR Rejected OR Manual Review
 """)
 
 
@@ -68,7 +86,7 @@ def example_transformations():
     print("\n--- Transformations ---")
 
     # Transform right (like map)
-    user = categorize_user(25).map_right(str.upper)
+    user = categorize_user(25).map(str.upper)
     print(f"Transformed right: {user.right()}")  # ADULT
 
     # Transform left (like map_err but symmetric)
@@ -105,6 +123,8 @@ def example_chaining():
             print(f"✓ {msg}")
         case Left(msg):
             print(f"→ {msg}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -135,6 +155,8 @@ def example_request_routing():
         case Right(action):
             print(f"✓ Primary: {action}")
             # Execute DB query
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -168,6 +190,9 @@ def example_approval():
             case Right(status):
                 print(f"✅ Application {status}")
                 return send_notification(status)
+            case unexpected:
+                print(f"Unexpected: {unexpected}")
+                return send_notification("error")
 
     print(process_application(550))  # Rejected
     print(process_application(700))  # Manual review
@@ -191,7 +216,7 @@ def example_decision_tree():
         else:
             return Right("approved")
 
-    def process_payment(amount: int, balance: int) -> dict:
+    def process_payment(amount: int, balance: int) -> PaymentInfo:
         """Process payment with clear branching."""
         result = check_payment(amount, balance)
 
@@ -202,6 +227,8 @@ def example_decision_tree():
                 return {"status": "error", "message": f"Need ${amount - balance} more"}
             case Right("approved"):
                 return {"status": "success", "amount": amount}
+            case unexpected:
+                return {"status": "error", "message": f"Unexpected: {unexpected}"}
 
     print("Payment 1:", process_payment(50, 100))  # Approved
     print("Payment 2:", process_payment(-10, 100))  # Invalid
@@ -216,16 +243,16 @@ def example_decision_tree():
 def example_either_with_result():
     print("\n--- Either with Result ---")
 
-    from results import Ok, Err, Result
+    from results import Err, Ok, Result
 
-    def get_user(user_id: int) -> Result[dict, str]:
+    def get_user(user_id: int) -> Result[dict[str, str | int], str]:
         """Get user or error."""
         if user_id > 0:
             return Ok({"id": user_id, "role": "admin"})
         else:
             return Err("Invalid user ID")
 
-    def check_permission(user: dict) -> Either[str, str]:
+    def check_permission(user: dict[str, str | int]) -> Either[str, str]:
         """Check if user is admin."""
         if user.get("role") == "admin":
             return Right("Access granted")
@@ -236,15 +263,20 @@ def example_either_with_result():
     user_id = 1
     result = get_user(user_id)
 
-    if result.is_ok():
-        permission = check_permission(result.ok())
-        match permission:
-            case Right(msg):
-                print(f"✓ {msg}")
-            case Left(msg):
-                print(f"→ {msg}")
-    else:
-        print(f"✗ {result.err()}")
+    match result:
+        case Ok(user):
+            permission = check_permission(user)
+            match permission:
+                case Right(msg):
+                    print(f"✓ {msg}")
+                case Left(msg):
+                    print(f"→ {msg}")
+                case unexpected:
+                    print(f"Unexpected: {unexpected}")
+        case Err(error):
+            print(f"✗ {error}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -264,6 +296,8 @@ def example_pattern_matching():
             print(f"Other: {category}")
         case Right(category):
             print(f"Adult: {category}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================

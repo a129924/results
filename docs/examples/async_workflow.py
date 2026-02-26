@@ -11,7 +11,7 @@ Install httpx for real HTTP: pip install httpx
 
 import asyncio
 from datetime import datetime
-from typing import TypedDict
+from typing import Awaitable, Callable, Literal, TypedDict
 
 from results import AsyncResult, Err, Ok, Result
 
@@ -34,6 +34,13 @@ class Company(TypedDict):
 class UserCompanyInfo(TypedDict):
     user: User
     company: Company
+
+
+class UserCompanyOutput(TypedDict):
+    processed_at: str
+    status: str
+    company_name: str
+    company_size: str | int
 
 
 async def fetch_user_data(user_id: int) -> Result[User, str]:
@@ -179,6 +186,8 @@ async def example_error_recovery():
             # Error, but we have default user
             print(f"✓ Error recovered with default user: {user['name']}")
             print(f"  (Original error: {error})")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -190,18 +199,16 @@ async def example_concurrent():
     print("\n--- Concurrent Operations ---")
 
     # Fetch multiple users in parallel
-    async def fetch_all_users():
-        r1 = asyncio.create_task(fetch_user_data(1))
-        r2 = asyncio.create_task(fetch_user_data(2))
-        r3 = asyncio.create_task(fetch_user_data(3))
-
-        results = await asyncio.gather(r1, r2, r3)
+    async def fetch_all_users() -> Result[list[User], str]:
+        results = await asyncio.gather(
+            *(asyncio.create_task(fetch_user_data(user_id)) for user_id in [1, 2, 3])
+        )
 
         # Check if all succeeded
-        users = []
+        users: list[User] = []
         for result in results:
             if result.is_ok():
-                users.append(result.ok())
+                users.append(result.unwrap())
             else:
                 return Err(f"One user fetch failed: {result.err()}")
 
@@ -216,6 +223,8 @@ async def example_concurrent():
                 print(f"  - {user['name']}")
         case Err(error):
             print(f"✗ Concurrent fetch failed: {error}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -226,14 +235,17 @@ async def example_concurrent():
 async def example_with_timeout():
     print("\n--- Timeout Handling ---")
 
-    async def slow_operation():
+    async def slow_operation() -> Result[dict[Literal["data"], str], str]:
         await asyncio.sleep(2)
         return Ok({"data": "result"})
 
     try:
         # Create task with short timeout
         await asyncio.wait_for(
-            AsyncResult.from_awaitable(slow_operation()).unwrap_async(), timeout=1.0
+            AsyncResult[dict[Literal["data"], str], str]
+            .from_awaitable(slow_operation())
+            .unwrap_async(),
+            timeout=1.0,
         )
         print("✓ Operation succeeded")
     except asyncio.TimeoutError:
@@ -250,27 +262,31 @@ async def example_with_timeout():
 async def example_data_pipeline():
     print("\n--- Real-World Data Pipeline ---")
 
-    async def process_user_pipeline(user_id: int) -> Result[dict, str]:
+    async def process_user_pipeline(user_id: int) -> Result[UserCompanyOutput, str]:
         """Full pipeline with context."""
+
+        async def fetch_company_for_user(user: User) -> Result[UserCompanyOutput, str]:
+            return (
+                await AsyncResult[Company, str]
+                .from_awaitable(fetch_company_data(user["company_id"]))
+                .context(f"fetching company for user {user['id']}")
+            ).map(
+                lambda company: UserCompanyOutput(
+                    processed_at=datetime.now().isoformat(),
+                    status="completed",
+                    company_name=company["name"],
+                    company_size=company.get("employees", "unknown"),
+                )
+            )
+
         return await (
-            AsyncResult.from_awaitable(fetch_user_data(user_id))
+            AsyncResult[User, str]
+            .from_awaitable(fetch_user_data(user_id))
             .context(f"fetching user {user_id}")
             .and_then_async(validate_user)
             .context("validating user")
-            .and_then_async(
-                lambda user: AsyncResult.from_awaitable(
-                    fetch_company_data(user["company_id"])
-                )
-            )
-            .context("fetching company")
-            .map_async(
-                lambda company: {
-                    "processed_at": datetime.now().isoformat(),
-                    "status": "completed",
-                    "company_name": company["name"],
-                    "company_size": company.get("employees", "unknown"),
-                }
-            )
+            .and_then_async(fetch_company_for_user)
+            .context("fetching company data")
         )
 
     result = await process_user_pipeline(1)
@@ -282,6 +298,8 @@ async def example_data_pipeline():
                 print(f"  {key}: {value}")
         case Err(error):
             print(f"✗ Pipeline failed: {error}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
@@ -292,17 +310,28 @@ async def example_data_pipeline():
 async def example_retry():
     print("\n--- Retry Logic ---")
 
-    async def fetch_with_retry(user_id: int, max_retries: int = 3) -> Result[dict, str]:
+    async def retry_async_with_exponential_backoff(
+        async_fn: Callable[[int], Awaitable[Result[User, str]]],
+        user_id: int,
+        attempt: int,
+    ) -> Result[User, str]:
+        """Retry an async function with exponential backoff."""
+        retry_result = await AsyncResult[User, str].from_awaitable(async_fn(user_id))
+
+        if retry_result.is_ok():
+            return retry_result
+        else:
+            await asyncio.sleep(0.5 * (2 ** (attempt - 1)))  # Exponential backoff
+            return Err(f"attempt {attempt} failed: {retry_result.err()}")
+
+    async def fetch_with_retry(user_id: int, max_retries: int = 3) -> Result[User, str]:
         """Retry failed async operations."""
         for attempt in range(max_retries):
-            result = await AsyncResult.from_awaitable(fetch_user_data(user_id))
-            if result.is_ok():
-                return Ok(result.ok())
-
-            if attempt < max_retries - 1:
-                wait_time = 2**attempt  # Exponential backoff
-                print(f"  Attempt {attempt + 1} failed, retrying in {wait_time}s...")
-                await asyncio.sleep(wait_time)
+            retry_result = await retry_async_with_exponential_backoff(
+                fetch_user_data, user_id, attempt + 1
+            )
+            if retry_result.is_ok():
+                return retry_result
 
         return Err("max_retries_exceeded")
 
@@ -314,6 +343,8 @@ async def example_retry():
             print(f"✓ Retry succeeded: {user['name']}")
         case Err(error):
             print(f"✗ All retries failed: {error}")
+        case unexpected:
+            print(f"Unexpected: {unexpected}")
 
 
 # ============================================================================
