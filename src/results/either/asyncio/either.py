@@ -747,7 +747,7 @@ class AsyncEither(AsyncEitherBase[L, R]):
                     task = aw
                 else:
                     task = loop.create_task(aw)  # type: ignore
-            return await task
+            return await task  # type: ignore
 
         return resolver
 

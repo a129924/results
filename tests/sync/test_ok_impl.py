@@ -175,7 +175,7 @@ class TestOkAndThen:
         def returns_error(x: int) -> Result[int, str]:
             return Err("first operation failed")
 
-        result = Ok(5).and_then(returns_error)
+        result: Result[int, str] = Ok[int, str](5).and_then(returns_error)
         # Result is Err, subsequent and_then would short-circuit
         assert result.is_err()
         assert result.err() == "first operation failed"
