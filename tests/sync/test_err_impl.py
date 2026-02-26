@@ -333,3 +333,66 @@ class TestErrInteroperability:
         mixed = error_result.and_then(transform).map_err(lambda e: f"Error: {e}")
         assert mixed.is_err()
         assert mixed.err() == "Error: initial error"
+
+
+class TestErrUnwrapOr:
+    """Test unwrap_or method on Err variant."""
+
+    def test_unwrap_or_returns_default(self) -> None:
+        """Test unwrap_or returns default value for Err."""
+        result: Result[int, str] = Err("error message")
+        assert result.unwrap_or(42) == 42
+
+    def test_unwrap_or_with_none_default(self) -> None:
+        """Test unwrap_or can return None."""
+        result: Result[int, str] = Err("error")
+        assert result.unwrap_or(None) is None  # type: ignore
+
+    def test_unwrap_or_with_different_error_types(self) -> None:
+        """Test unwrap_or works with various error types."""
+        result: Result[str, Exception] = Err(ValueError("parse error"))
+        assert result.unwrap_or("fallback") == "fallback"
+
+    def test_unwrap_or_preserves_return_type(self) -> None:
+        """Test unwrap_or return type matches value type."""
+        result: Result[float, str] = Err("error")
+        value: float = result.unwrap_or(3.14)
+        assert value == 3.14
+
+
+class TestErrUnwrapOrElse:
+    """Test unwrap_or_else method on Err variant."""
+
+    def test_unwrap_or_else_calls_function(self) -> None:
+        """Test unwrap_or_else calls function with error."""
+        result: Result[int, str] = Err("error message")
+        value = result.unwrap_or_else(lambda e: len(e) * 10)
+        assert value == 130  # len("error message") = 13, * 10 = 130
+
+    def test_unwrap_or_else_error_transformation(self) -> None:
+        """Test unwrap_or_else transforms error into value."""
+        result: Result[int, ValueError] = Err(ValueError("bad input"))
+        value = result.unwrap_or_else(lambda e: len(str(e)))
+        assert value == len(str(ValueError("bad input")))
+
+    def test_unwrap_or_else_with_complex_computation(self) -> None:
+        """Test unwrap_or_else with complex computed default."""
+        result: Result[int, str] = Err("ERR")
+        # Compute based on error properties
+        value = result.unwrap_or_else(
+            lambda e: {"err": "ERR", "len": len(e)}.get("len")
+        )
+        assert value == 3
+
+    def test_unwrap_or_else_called_exactly_once(self) -> None:
+        """Test unwrap_or_else function called exactly once."""
+        call_count = 0
+
+        def compute_default(e: str) -> int:
+            nonlocal call_count
+            call_count += 1
+            return len(e)
+
+        result: Result[int, str] = Err("error")
+        result.unwrap_or_else(compute_default)
+        assert call_count == 1

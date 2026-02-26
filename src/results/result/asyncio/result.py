@@ -73,6 +73,12 @@ class AsyncResultBase(ABC, Generic[T, E]):
         self, fn: Callable[[E], Awaitable[None]]
     ) -> AsyncResult[T, E]: ...
 
+    @abstractmethod
+    async def unwrap_or_async(self, default: T) -> T: ...
+
+    @abstractmethod
+    async def unwrap_or_else_async(self, fn: Callable[[E], Awaitable[T]]) -> T: ...
+
 
 @dataclass(frozen=True)
 class AsyncResult(AsyncResultBase[T, E]):
@@ -346,6 +352,51 @@ class AsyncResult(AsyncResultBase[T, E]):
         if current.is_err():
             await fn(current.err())  # type: ignore
         return self
+
+    async def unwrap_or_async(self, default: T) -> T:
+        """Extract success value or return default if error.
+
+        If Ok, returns the wrapped value. If Err, returns the default.
+
+        Parameters:
+            default: Value to return if error
+
+        Returns:
+            T: The unwrapped value or default
+
+        Example:
+            >>> result = await AsyncResult.from_result(Ok(42)).unwrap_or_async(0)
+            42
+            >>> result = await AsyncResult.from_result(Err("error")).unwrap_or_async(0)
+            0
+        """
+        current = await self
+        return current.unwrap_or(default)
+
+    async def unwrap_or_else_async(self, fn: Callable[[E], Awaitable[T]]) -> T:
+        """Extract success value or compute default from error.
+
+        If Ok, returns the wrapped value. If Err, awaits fn(error) to compute default.
+
+        Parameters:
+            fn: Async function that transforms error E to value T
+
+        Returns:
+            T: The value or computed default
+
+        Example:
+            >>> async def compute(e: str) -> int:
+            ...     return len(e)
+            >>> result = await AsyncResult.from_result(Ok(42)).unwrap_or_else_async(compute)
+            42
+            >>> result = await AsyncResult.from_result(Err("error")).unwrap_or_else_async(compute)
+            5
+        """
+        current = await self
+        if current.is_ok():
+            return current.ok()  # type: ignore
+        # Err: compute default
+        return await fn(current.err())  # type: ignore
 
     @staticmethod
     def from_result(result: Result[T, E]) -> AsyncResult[T, E]:

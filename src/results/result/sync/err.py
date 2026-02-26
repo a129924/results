@@ -284,6 +284,42 @@ class Err(Result[T, E], Generic[T, E]):
         return self  # type: ignore
 
     @override
+    def unwrap_or(self, default: T) -> T:
+        """Extract success value or return default if error.
+
+        For Err variant, always returns the default value.
+
+        Parameters:
+            default: Value to return for this error
+
+        Returns:
+            T: The provided default value
+
+        Example:
+            >>> Err(ValueError("error")).unwrap_or(42)
+            42
+        """
+        return default
+
+    @override
+    def unwrap_or_else(self, f: Callable[[E], T]) -> T:
+        """Extract success value or compute default from error.
+
+        For Err variant, applies the function to the error to compute the default.
+
+        Parameters:
+            f: Function that transforms error E into value T
+
+        Returns:
+            T: Result of f(error)
+
+        Example:
+            >>> Err(ValueError("error")).unwrap_or_else(lambda e: len(str(e)))
+            5
+        """
+        return f(self._error)
+
+    @override
     def inspect(self, f: Callable[[T], None]) -> Result[T, E]:
         """Inspect success value for debugging without modifying the Result.
 

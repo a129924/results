@@ -304,6 +304,42 @@ class Ok(Result[T, E], Generic[T, E]):
         """
         return op(self._value)  # type: ignore[return-value]
 
+    @override
+    def unwrap_or(self, default: T) -> T:
+        """Extract success value or return default if error.
+
+        For Ok variant, always returns the wrapped value.
+
+        Parameters:
+            default: Value to return if error (not used for Ok)
+
+        Returns:
+            T: The wrapped success value
+
+        Example:
+            >>> Ok(42).unwrap_or(0)
+            42
+        """
+        return self._value
+
+    @override
+    def unwrap_or_else(self, f: Callable[[E], T]) -> T:
+        """Extract success value or compute default from error.
+
+        For Ok variant, always returns the wrapped value without calling the function.
+
+        Parameters:
+            f: Function to compute default (not called for Ok)
+
+        Returns:
+            T: The wrapped success value
+
+        Example:
+            >>> Ok(42).unwrap_or_else(lambda e: len(str(e)))
+            42
+        """
+        return self._value
+
     def __repr__(self) -> str:
         """Return string representation for debugging.
 

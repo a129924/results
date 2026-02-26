@@ -307,3 +307,51 @@ class Result(ABC, Generic[T, E]):
             # Returns Ok(42), function not called (no overhead)
         """
         ...
+
+    @abstractmethod
+    def unwrap_or(self, default: T) -> T:
+        """Extract success value or return default if error.
+
+        If this is Ok, returns the wrapped value. If this is Err, returns
+        the provided default value without calling any function.
+
+        This is a safe way to handle errors with a fallback value.
+
+        Parameters:
+            default: Value to return if this is Err
+
+        Returns:
+            T: The wrapped success value if Ok, otherwise default
+
+        Example:
+            >>> Ok(42).unwrap_or(0)
+            42
+
+            >>> Err(ValueError("error")).unwrap_or(0)
+            0
+        """
+        ...
+
+    @abstractmethod
+    def unwrap_or_else(self, f: Callable[[E], T]) -> T:
+        """Extract success value or compute default from error.
+
+        If this is Ok, returns the wrapped value. If this is Err, applies
+        the function to the error value to compute the default.
+
+        This is a safe way to handle errors with a computed fallback.
+
+        Parameters:
+            f: Function that transforms error E into value T
+
+        Returns:
+            T: The wrapped success value if Ok, otherwise result of f(error)
+
+        Example:
+            >>> Ok(42).unwrap_or_else(lambda e: len(str(e)))
+            42
+
+            >>> Err(ValueError("error")).unwrap_or_else(lambda e: len(str(e)))
+            5
+        """
+        ...

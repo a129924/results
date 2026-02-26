@@ -290,3 +290,57 @@ class TestOkTypeInference:
 
         result = parse("42").and_then(validate).map(lambda x: x * 2)
         assert result.ok() == 84
+
+
+class TestOkUnwrapOr:
+    """Test unwrap_or method on Ok variant."""
+
+    def test_unwrap_or_returns_value_not_default(self) -> None:
+        """Test unwrap_or returns Ok value and ignores default."""
+        result: Result[int, str] = Ok(42)
+        assert result.unwrap_or(0) == 42
+
+    def test_unwrap_or_with_none_value(self) -> None:
+        """Test unwrap_or with None as Ok value."""
+        result: Result[None, str] = Ok(None)
+        assert result.unwrap_or(None) is None
+
+    def test_unwrap_or_with_complex_default(self) -> None:
+        """Test unwrap_or ignores complex default types."""
+        result: Result[str, ValueError] = Ok("success")
+        assert result.unwrap_or("fallback") == "success"
+
+    def test_unwrap_or_preserves_type(self) -> None:
+        """Test unwrap_or return type matches value type."""
+        result: Result[int, str] = Ok(100)
+        value: int = result.unwrap_or(0)
+        assert value == 100
+
+
+class TestOkUnwrapOrElse:
+    """Test unwrap_or_else method on Ok variant."""
+
+    def test_unwrap_or_else_returns_value_not_computed(self) -> None:
+        """Test unwrap_or_else returns Ok value without calling function."""
+        result: Result[int, str] = Ok(42)
+        assert result.unwrap_or_else(lambda e: len(e) * 10) == 42
+
+    def test_unwrap_or_else_not_called_for_ok(self) -> None:
+        """Test function is not called when Ok."""
+        call_count = 0
+
+        def compute_default(e: str) -> int:
+            nonlocal call_count
+            call_count += 1
+            return 0
+
+        result: Result[int, str] = Ok(42)
+        result.unwrap_or_else(compute_default)
+        assert call_count == 0
+
+    def test_unwrap_or_else_with_complex_computation(self) -> None:
+        """Test unwrap_or_else with complex error-to-value computation."""
+        result: Result[int, ValueError] = Ok(99)
+        # Function that would compute from error
+        value = result.unwrap_or_else(lambda e: len(str(e)))
+        assert value == 99

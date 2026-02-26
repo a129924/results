@@ -95,6 +95,14 @@ class ConcreteOk(Result[int, ValueError_]):
     def with_context(self, f: Callable[[], str]) -> "Result[int, ValueError_]":
         return self
 
+    @override
+    def unwrap_or(self, default: int) -> int:
+        return self._value
+
+    @override
+    def unwrap_or_else(self, f: Callable[[ValueError_], int]) -> int:
+        return self._value
+
 
 @dataclass(frozen=True)
 class ConcreteErr(Result[int, ValueError_]):
@@ -157,6 +165,14 @@ class ConcreteErr(Result[int, ValueError_]):
     @override
     def with_context(self, f: Callable[[], str]) -> "Result[int, ValueError_]":
         return self
+
+    @override
+    def unwrap_or(self, default: int) -> int:
+        return default
+
+    @override
+    def unwrap_or_else(self, f: Callable[[ValueError_], int]) -> int:
+        return f(self._error)
 
 
 class TestResultABC:
@@ -262,6 +278,8 @@ class TestResultABC:
             "inspect_err",
             "context",
             "with_context",
+            "unwrap_or",
+            "unwrap_or_else",
         }
         result_abstract_methods = Result.__abstractmethods__
         assert abstract_methods == result_abstract_methods
