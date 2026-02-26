@@ -5,6 +5,7 @@ Covers transformations, extractions, context chains, and edge cases.
 Mirrors test_left_impl.py with inverted logic.
 """
 
+# pyright: reportPrivateUsage=false, reportOptionalSubscript=false
 import pytest
 
 from results import Left, Right
@@ -348,9 +349,7 @@ class TestRightChaining:
     def test_chained_and_then_operations(self) -> None:
         """Multiple and_then operations chain correctly."""
         result = (
-            Right(42)
-            .and_then(lambda x: Right(x * 2))
-            .and_then(lambda x: Right(x + 1))
+            Right(42).and_then(lambda x: Right(x * 2)).and_then(lambda x: Right(x + 1))
         )
         assert result.is_right()
         assert result.right() == 85
@@ -392,6 +391,7 @@ class TestRightEdgeCases:
 
     def test_right_with_function_value(self) -> None:
         """Right can contain function as a value."""
+
         def my_func() -> int:
             return 42
 
@@ -402,6 +402,7 @@ class TestRightEdgeCases:
         """Right instance is frozen (immutable)."""
         right = Right(42)
         from dataclasses import FrozenInstanceError
+
         with pytest.raises(FrozenInstanceError):
             right._value = 99  # type: ignore
 

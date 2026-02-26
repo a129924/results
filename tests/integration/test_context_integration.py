@@ -7,6 +7,7 @@ applications.
 All tests follow v0.1.0 backward compatibility requirements.
 """
 
+# pyright: reportPrivateUsage=false, reportReturnType=false, reportArgumentType=false, reportOperatorIssue=false, reportMissingTypeArgument=false
 from typing import TypedDict
 
 from results import Err, Ok, Result

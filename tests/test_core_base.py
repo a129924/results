@@ -4,6 +4,7 @@ This test module validates that the Result ABC is properly defined
 and enforces the contract for all implementations.
 """
 
+# pyright: reportIncompatibleMethodOverride=false, reportInvalidTypeForm=false, reportReturnType=false
 from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass

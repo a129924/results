@@ -4,6 +4,7 @@ This test module validates that the exception classes are correctly defined
 and usable for error handling in the Result framework.
 """
 
+# pyright: reportFunctionMemberAccess=false
 from dataclasses import FrozenInstanceError, dataclass, is_dataclass
 
 import pytest

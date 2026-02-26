@@ -7,6 +7,7 @@ Tests verify end-to-end Result functionality including:
 - Real-world usage patterns
 """
 
+# pyright: reportOperatorIssue=false, reportPrivateUsage=false, reportUnusedFunction=false, reportMissingTypeArgument=false
 import pytest
 
 from results import Err, Ok, Result

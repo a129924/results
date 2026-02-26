@@ -1,5 +1,6 @@
 """Integration tests for context chain propagation across Maybe/Result."""
 
+# pyright: reportPrivateUsage=false
 from __future__ import annotations
 
 import pytest

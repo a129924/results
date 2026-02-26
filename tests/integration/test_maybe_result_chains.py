@@ -1,5 +1,6 @@
 """Integration tests for Result and Maybe chaining."""
 
+# pyright: reportArgumentType=false
 from __future__ import annotations
 
 import json

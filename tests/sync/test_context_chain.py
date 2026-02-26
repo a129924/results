@@ -10,6 +10,7 @@ This module tests the context chain feature added in v0.2.0, including:
 All tests follow v0.1.0 backward compatibility requirements.
 """
 
+# pyright: reportPrivateUsage=false, reportOperatorIssue=false
 import pytest
 
 from results import Err, Ok

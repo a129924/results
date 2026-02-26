@@ -7,6 +7,7 @@ Tests verify Err variant behavior for all Result ABC methods including:
 - Unwrap behavior
 """
 
+# pyright: reportPrivateUsage=false, reportOptionalSubscript=false, reportMissingTypeArgument=false, reportArgumentType=false
 import pytest
 
 from results import Err, Ok, Result, UnwrapError

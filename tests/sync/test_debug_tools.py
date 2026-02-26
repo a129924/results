@@ -11,6 +11,7 @@ All tests verify:
 - Chainability with other operations
 """
 
+# pyright: reportPrivateUsage=false, reportMissingTypeArgument=false
 import pytest
 
 from results import Err, Ok, Result

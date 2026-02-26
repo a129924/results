@@ -1,9 +1,10 @@
 """Unit tests for Left[L, R] variant implementation.
 
-Tests all 16 abstract methods from Either ABC on Left variant.
+Tests all 16 abstract methods from Left ABC on Left variant.
 Covers transformations, extractions, context chains, and edge cases.
 """
 
+# pyright: reportPrivateUsage=false, reportOptionalSubscript=false
 import pytest
 
 from results import Left, Right
@@ -337,11 +338,7 @@ class TestLeftChaining:
 
     def test_chained_map_left_operations(self) -> None:
         """Multiple map_left operations chain correctly."""
-        result = (
-            Left("error")
-            .map_left(str.upper)
-            .map_left(lambda x: f"[{x}]")
-        )
+        result = Left("error").map_left(str.upper).map_left(lambda x: f"[{x}]")
         assert result.left() == "[ERROR]"
 
     def test_chained_and_then_left_operations(self) -> None:
@@ -357,9 +354,7 @@ class TestLeftChaining:
     def test_chained_with_or_else(self) -> None:
         """Left.or_else chain with recovery."""
         result = (
-            Left("error1")
-            .or_else(lambda: Left("error2"))
-            .or_else(lambda: Right(42))
+            Left("error1").or_else(lambda: Left("error2")).or_else(lambda: Right(42))
         )
         assert result.is_right()
         assert result.right() == 42
@@ -391,6 +386,7 @@ class TestLeftEdgeCases:
 
     def test_left_with_function_value(self) -> None:
         """Left can contain function as a value."""
+
         def my_func() -> int:
             return 42
 
@@ -401,6 +397,7 @@ class TestLeftEdgeCases:
         """Left instance is frozen (immutable)."""
         left = Left("error")
         from dataclasses import FrozenInstanceError
+
         with pytest.raises(FrozenInstanceError):
             left._value = "new error"  # type: ignore
 

@@ -8,6 +8,7 @@ Test coverage:
 - Context chain propagation
 """
 
+# pyright: reportPrivateUsage=false, reportOptionalSubscript=false
 import asyncio
 
 import pytest

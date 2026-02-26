@@ -261,7 +261,7 @@ class TestOkImmutability:
         """Test Ok attributes cannot be modified."""
         result: Result[int, str] = Ok(42)
         with pytest.raises((AttributeError, TypeError)):
-            result._value = 100  # type: ignore
+            result._value = 100  # type: ignore[misc]  # 冻結對象不可修改，故意測試異常
 
 
 class TestOkTypeInference:
