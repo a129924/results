@@ -1,0 +1,61 @@
+name: Type Check with Pyright
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  type-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Pyright type check on src/results
+        run: uv run pyright src/results/
+
+      - name: Run Pyright type check on tests (lenient)
+        run: uv run pyright tests/ || true
+
+      - name: Run Ruff linter
+        run: uv run ruff check src/results/ tests/
+
+      - name: Run Ruff formatter check
+        run: uv run ruff format --check src/results/ tests/
+
+      - name: Run pytest with coverage
+        run: uv run pytest tests/ --cov=src/results --cov-report=term-missing --cov-fail-under=80
+
+  pr-comment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: type-check
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Type check, lint, and tests passed!'
+            })
