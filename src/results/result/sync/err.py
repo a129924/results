@@ -212,7 +212,7 @@ class Err(Result[T, E], Generic[T, E]):
             >>> transformed.err() is error
             True
         """
-        return self  # type: ignore
+        return self  # type: ignore[return-value]  # Err[T, E] 是 Result[T, E] 的合法變體（U 遺忘）
 
     @override
     def map_err(self, op: Callable[[E], F]) -> Result[T, F]:
@@ -281,7 +281,7 @@ class Err(Result[T, E], Generic[T, E]):
             >>> result = result.and_then(divide)  # Result[int, ZeroDivisionError | ValueError]
             >>> # Error remains unchanged, but type system knows both error types
         """
-        return self  # type: ignore
+        return self  # type: ignore[return-value]  # Err[T, E] ⊆ Result[U, E|F]（Error 子集）
 
     @override
     def unwrap_or(self, default: T) -> T:

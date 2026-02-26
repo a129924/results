@@ -140,7 +140,7 @@ class Left(Either[L, R], Generic[L, R]):
             # Left("error")
         """
         # Left is unchanged by right-focused operations
-        return self  # type: ignore
+        return self  # type: ignore[return-value]  # Left[L, R] 是 Either[L, U] 的合法變體
 
     @override
     def map_left(self, op: Callable[[L], U]) -> Either[U, R]:
@@ -192,7 +192,7 @@ class Left(Either[L, R], Generic[L, R]):
             # Left("error")
         """
         # Left is unchanged by right-focused operations
-        return self  # type: ignore
+        return self  # type: ignore[return-value]  # Left[L, R] ⊆ Either[L, U]（協變）
 
     @override
     def and_then_left(self, op: Callable[[L], Either[U, R]]) -> Either[U, R]:
@@ -245,7 +245,7 @@ class Left(Either[L, R], Generic[L, R]):
             # Left("error")
         """
         # Left is unchanged by left-focused recovery
-        return self  # type: ignore
+        return self  # type: ignore[return-value]  # Left[L, R] -> Either[U, R]（L 不變於 U）
 
     @override
     def inspect(self, op: Callable[[R], None]) -> Either[L, R]:

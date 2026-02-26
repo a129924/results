@@ -68,9 +68,9 @@ def flatten(either: Either[L, Either[L, R]]) -> Either[L, R]:
         if inner is not None:
             return inner
         # Shouldn't happen with normal Either usage
-        return Left("inner None")  # type: ignore
+        return Left("inner None")  # type: ignore[return-value]  # 異常路徑返回緊急值，型別無從推導
     # Left: return outer error
-    return either.map_left(lambda _: _)  # type: ignore
+    return either.map_left(lambda _: _)  # type: ignore[arg-type]  # 身份函數型別推導不完備
 
 
 def swap(either: Either[L, R]) -> Either[R, L]:
@@ -97,9 +97,9 @@ def swap(either: Either[L, R]) -> Either[R, L]:
         "error"
     """
     if either.is_right():
-        return Left(either.right())  # type: ignore
+        return Left(either.right())  # type: ignore[return-value]  # Left[R, ?] 無法推導為 Either[R, L]
     else:
-        return Right(either.left())  # type: ignore
+        return Right(either.left())  # type: ignore[return-value]  # Right[?, L] 無法推導為 Either[R, L]
 
 
 def from_ok_err(result: OkMixin[T, E] | ErrMixin[T, E]) -> Either[E, T]:
@@ -124,10 +124,10 @@ def from_ok_err(result: OkMixin[T, E] | ErrMixin[T, E]) -> Either[E, T]:
         >>> either_err.unwrap_left()
         "error"
     """
-    if result.is_ok():  # type: ignore
-        return Right(result.ok())  # type: ignore
+    if result.is_ok():  # type: ignore[truthy-bool]  # Union 型別無法被 is_ok() 細化
+        return Right(result.ok())  # type: ignore[union-attr]  # Union 型別缺乏 ok() 方法推導
     else:
-        return Left(result.err())  # type: ignore
+        return Left(result.err())  # type: ignore[union-attr]  # Union 型別缺乏 err() 方法推導
 
 
 def partition(
@@ -207,7 +207,7 @@ def sequence(eithers: Sequence[Either[L, R]]) -> Either[L, list[R]]:
             left_val = either.left()
             if left_val is not None:
                 return Left(left_val)
-            return Left("inner None encountered")  # type: ignore
+            return Left("inner None encountered")  # type: ignore[return-value]  # 緊急值型別無法推導至 Either[L, list[R]]
         else:
             right_val = either.right()
             if right_val is not None:

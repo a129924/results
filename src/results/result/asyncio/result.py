@@ -164,7 +164,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         if result.is_err():
             unwrap_with_context(result.err(), self._context_chain)
 
-        return result.ok()  # type: ignore
+        return result.ok()  # type: ignore[misc]  # is_err() 無法保證後續不執行此行
 
     @override
     async def resolve(self) -> Result[T, E]:
@@ -240,9 +240,9 @@ class AsyncResult(AsyncResultBase[T, E]):
             current = await self
             if current.is_ok():
                 value = current.ok()
-                transformed_value = await fn(value)  # type: ignore
+                transformed_value = await fn(value)  # type: ignore[assignment]  # Awaitable[U] 型別推導不完備
                 return Ok(transformed_value)
-            return current.map_err(lambda e: e)  # type: ignore
+            return current.map_err(lambda e: e)  # type: ignore[arg-type]  # 身份函數型別推導不完備（協變性）
 
         return AsyncResult(lambda: transformed(), self._context_chain)
 
@@ -268,9 +268,9 @@ class AsyncResult(AsyncResultBase[T, E]):
             current = await self
             if current.is_err():
                 error = current.err()
-                transformed_error = await fn(error)  # type: ignore
+                transformed_error = await fn(error)  # type: ignore[assignment]  # Awaitable[F] 型別推導不完備
                 return Err(transformed_error)
-            return current.map(lambda t: t)  # type: ignore
+            return current.map(lambda t: t)  # type: ignore[arg-type]  # 身份函數型別推導不完備
 
         return AsyncResult(lambda: transformed(), self._context_chain)
 
@@ -299,9 +299,9 @@ class AsyncResult(AsyncResultBase[T, E]):
             current = await self
             if current.is_ok():
                 value = current.ok()
-                return await fn(value)  # type: ignore
+                return await fn(value)  # type: ignore[arg-type]  # current.ok() 型別推導不完備（Union 類型）
             # Err: short-circuit, error type expands to E | F
-            return current.map_err(lambda e: e)  # type: ignore
+            return current.map_err(lambda e: e)  # type: ignore[arg-type]  # 身份函數型別推導不完備
 
         return AsyncResult(lambda: transformed(), self._context_chain)
 
@@ -326,7 +326,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         """
         current = await self
         if current.is_ok():
-            await fn(current.ok())  # type: ignore
+            await fn(current.ok())  # type: ignore[arg-type]  # current.ok() \u578b\u5225\u63a8\u5c0e\u4e0d\u5b8c\u5099\uff08Union \u985e\u578b\uff09
         return self
 
     @override
@@ -350,7 +350,7 @@ class AsyncResult(AsyncResultBase[T, E]):
         """
         current = await self
         if current.is_err():
-            await fn(current.err())  # type: ignore
+            await fn(current.err())  # type: ignore[arg-type]  # current.err() \u578b\u5225\u63a8\u5c0e\u4e0d\u5b8c\u5099\uff08Union \u985e\u578b\uff09
         return self
 
     async def unwrap_or_async(self, default: T) -> T:
@@ -394,9 +394,9 @@ class AsyncResult(AsyncResultBase[T, E]):
         """
         current = await self
         if current.is_ok():
-            return current.ok()  # type: ignore
+            return current.ok()  # type: ignore[misc]  # is_ok() \u7121\u6cd5\u4fdd\u8b77\u5f8c\u7e8c\u4e0d\u57f7\u884c\u6b64\u884c
         # Err: compute default
-        return await fn(current.err())  # type: ignore
+        return await fn(current.err())  # type: ignore[arg-type]  # current.err() \u578b\u5225\u63a8\u5c0e\u4e0d\u5b8c\u5099\uff08Union \u985e\u578b\uff09
 
     @staticmethod
     def from_result(result: Result[T, E]) -> AsyncResult[T, E]:
@@ -456,7 +456,7 @@ class AsyncResult(AsyncResultBase[T, E]):
                 if isinstance(aw, asyncio.Future):
                     task = aw
                 else:
-                    task = loop.create_task(aw)  # type: ignore
+                    task = loop.create_task(aw)  # type: ignore[assignment]  # asyncio.Task \u578b\u5225\u63a8\u5c0e\u9650\u5236
             return await task
 
         return resolver

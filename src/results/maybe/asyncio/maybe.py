@@ -420,7 +420,7 @@ class AsyncMaybe(AsyncMaybeBase[T]):
                 if isinstance(aw, asyncio.Future):
                     task = aw
                 else:
-                    task = cast(asyncio.Task[Maybe[T]], loop.create_task(aw))  # type: ignore
+                    task = cast(asyncio.Task[Maybe[T]], loop.create_task(aw))  # type: ignore[arg-type]  # asyncio.Task 型別推導限制
             return await task
 
         return resolver
