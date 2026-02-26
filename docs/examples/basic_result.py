@@ -75,20 +75,20 @@ def example_chaining():
 
 
 # ============================================================================
-# 5. Error Recovery with or_else()
+# 5. Error Recovery with unwrap_or() and unwrap_or_else()
 # ============================================================================
 
 
 def example_recovery():
     print("\n--- Error Recovery ---")
 
-    # Basic recovery
-    result = divide(10, 0).or_else(lambda e: Ok(0))
-    print(f"Error recovered with 0: {result.unwrap()}")  # Ok(0)
+    # Basic recovery with default value
+    result = divide(10, 0).unwrap_or(0)
+    print(f"Error recovered with default 0: {result}")  # 0
 
-    # Conditional recovery
-    result = divide(10, 0).or_else(lambda e: Ok(0) if "zero" in e else Err(e))
-    print(f"Conditional recovery: {result.unwrap()}")  # Ok(0)
+    # Recovery: compute alternative from error
+    result = divide(10, 0).unwrap_or_else(lambda e: len(e) * 10)
+    print(f"Error message length × 10: {result}")  # 180 (18 * 10)
 
 
 # ============================================================================
@@ -186,7 +186,7 @@ def example_composition():
         """Apply multiple divisions safely."""
         result = Ok[int, str](x)
         for divisor in divisors:
-            result = result.and_then(lambda v: divide(v, divisor))
+            result = result.and_then(lambda v, d=divisor: divide(v, d))
         return result
 
     # Success path

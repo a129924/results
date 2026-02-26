@@ -169,15 +169,16 @@ async def example_error_recovery():
     print("\n--- Error Handling and Recovery ---")
 
     # Fetch non-existent user, recover with default
-    result = await AsyncResult.from_awaitable(fetch_user_data(999)).map(
-        lambda error: Ok({"id": 0, "name": "Anonymous", "company_id": 0})
-    )
+    result = await AsyncResult[User, str].from_awaitable(fetch_user_data(999))
+    user = result.unwrap_or({"id": 0, "name": "Anonymous", "company_id": 0})
 
     match result:
-        case Ok(user):
+        case Ok(_):
             print(f"✓ Final user: {user['name']}")
         case Err(error):
-            print(f"✗ Unrecovered error: {error}")
+            # Error, but we have default user
+            print(f"✓ Error recovered with default user: {user['name']}")
+            print(f"  (Original error: {error})")
 
 
 # ============================================================================
@@ -231,12 +232,12 @@ async def example_with_timeout():
 
     try:
         # Create task with short timeout
-        result = await asyncio.wait_for(
+        await asyncio.wait_for(
             AsyncResult.from_awaitable(slow_operation()).unwrap_async(), timeout=1.0
         )
-        print(f"✓ Operation succeeded")
+        print("✓ Operation succeeded")
     except asyncio.TimeoutError:
-        print(f"✗ Operation timed out")
+        print("✗ Operation timed out")
     except Exception as e:
         print(f"✗ Operation failed: {e}")
 
@@ -267,7 +268,7 @@ async def example_data_pipeline():
                     "processed_at": datetime.now().isoformat(),
                     "status": "completed",
                     "company_name": company["name"],
-                    "company_size": company["employees"],
+                    "company_size": company.get("employees", "unknown"),
                 }
             )
         )
@@ -276,7 +277,7 @@ async def example_data_pipeline():
 
     match result:
         case Ok(output):
-            print(f"✓ Pipeline succeeded:")
+            print("✓ Pipeline succeeded:")
             for key, value in output.items():
                 print(f"  {key}: {value}")
         case Err(error):
