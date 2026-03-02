@@ -1,0 +1,36 @@
+# Pre-commit hooks configuration for Results project
+# Automatically validates code before commits
+
+repos:
+  - repo: local
+    hooks:
+      # Pyright: Strict type checking on src/results/ (0 errors required)
+      - id: pyright-strict
+        name: Pyright Strict (Source Code)
+        entry: uv run pyright src/results/
+        language: system
+        types: [python]
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+
+      # Ruff: Format check (all code)
+      - id: ruff-format-check
+        name: Ruff Format Check
+        entry: uv run ruff format --check src/ tests/ docs/
+        language: system
+        types: [python]
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true
+
+      # Ruff: Lint check (all code)
+      - id: ruff-lint
+        name: Ruff Lint Check
+        entry: uv run ruff check src/ tests/ docs/
+        language: system
+        types: [python]
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true

@@ -121,6 +121,49 @@ uv run pyright tests/              # 測試層檢查（可寬鬆）
 
 ---
 
+## Pre-commit Hooks（自動化檢查）
+
+預提交 hooks 自動在每次 `git commit` 前驗證程式碼品質。
+
+### 設定（首次克隆或新環境）
+
+```bash
+# 安裝 git hooks（需執行一次）
+uv run pre-commit install
+
+# 手動驗證所有檔案（可選）
+uv run pre-commit run --all-files
+```
+
+### Commit 前自動檢查
+
+當執行 `git commit` 時，會依序執行：
+
+1. **Pyright Strict** — `uv run pyright src/results/` 必須 0 errors
+2. **Ruff Format Check** — `uv run ruff format --check ...` 無格式違反
+3. **Ruff Lint Check** — `uv run ruff check ...` 無 lint 違反
+
+若任何檢查失敗，commit 會被拒絕。修正錯誤後即可重試。
+
+### 跳過 Hooks（不建議）
+
+```bash
+# 必須有充分理由才應跳過（e.g., 緊急修補）
+git commit --no-verify
+```
+
+### 檢查狀態
+
+```bash
+# 查看 hooks 是否已安裝
+cat .git/hooks/pre-commit
+
+# 手動重新安裝（若被破壞）
+uv run pre-commit install --install-hooks
+```
+
+---
+
 ## Ruff
 
 ```bash
