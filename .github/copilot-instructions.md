@@ -292,3 +292,16 @@ git describe --tags
 ---
 
 **v1.1.0 | 2026-02-05**
+---
+
+## Functional Style Rules
+
+This library is a **Rust-inspired Result/Maybe type implementation**. Functional, composable error handling is the primary design goal — not imperative branching.
+
+### Key Rules
+
+- **Prefer functional chaining** (`map`, `map_err`, `and_then`) over `is_ok()` / `is_err()` imperative checks
+- **Prefer `match/case`** over `if result.is_ok()` when dispatching on Result/Maybe at boundaries
+- **Use `context()`** to attach error tracing information to `Err` / `Nothing`
+
+Detailed coding style rules are in `.github/skills/result-coding-style/SKILL.md`.
